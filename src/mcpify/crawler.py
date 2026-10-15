@@ -46,12 +46,8 @@ def crawl_service(reg: Registry, svc: ServiceConfig, app=None) -> dict[str, list
     for tool in spec_to_tools(svc.name, spec, names):
         seen.add(tool["name"])
         h = definition_hash(tool)
-        latest = reg.revisions(tool["name"])
-        if latest and latest[-1]["spec_hash"] == h:
-            report["unchanged"].append(tool["name"])
-            reg.propose(latest[-1]["definition"], h)  # un-remove if needed
-            continue
-        tool["description"] = describe(tool)
+        if reg.latest_hash(tool["name"]) != h:  # only pay for an LLM description on real changes
+            tool["description"] = describe(tool)
         report[reg.propose(tool, h)].append(tool["name"])
     report["removed"] = reg.mark_removed(svc.name, seen)
     return report

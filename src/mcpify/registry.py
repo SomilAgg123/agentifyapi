@@ -80,6 +80,11 @@ class Registry:
         self.db.commit()
         return gone
 
+    def latest_hash(self, tool: str) -> str | None:
+        r = self.db.execute("SELECT spec_hash FROM revisions WHERE tool=? ORDER BY version DESC LIMIT 1",
+                            (tool,)).fetchone()
+        return r["spec_hash"] if r else None
+
     def revisions(self, tool: str) -> list[dict]:
         rows = self.db.execute("SELECT * FROM revisions WHERE tool=? ORDER BY version", (tool,))
         return [{**dict(r), "definition": json.loads(r["definition"])} for r in rows]

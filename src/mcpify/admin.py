@@ -64,7 +64,7 @@ def admin_router(reg: Registry, audit=None) -> APIRouter:
         try:
             diff = revision_diff(reg, tool)
         except RegistryError as e:
-            raise HTTPException(404, str(e))
+            raise HTTPException(404, str(e)) from e
         row = next(t for t in reg.tools() if t["name"] == tool)
         revs = reg.revisions(tool)
         hist = "".join(f"<tr><td>v{x['version']}</td><td>{x['status']}</td><td>{x['spec_hash']}</td>"
@@ -87,9 +87,9 @@ def admin_router(reg: Registry, audit=None) -> APIRouter:
              "enable": lambda: reg.set_enabled(tool, True), "disable": lambda: reg.set_enabled(tool, False),
              "rollback": lambda: reg.rollback(tool)}[action]()
         except KeyError:
-            raise HTTPException(404, "unknown action")
+            raise HTTPException(404, "unknown action") from None
         except RegistryError as e:
-            raise HTTPException(400, str(e))
+            raise HTTPException(400, str(e)) from e
         return RedirectResponse(f"../{tool}", status_code=303)
 
     return r

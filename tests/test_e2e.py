@@ -1,7 +1,6 @@
 """End to end: run mock services, crawl, approve, then call through MCP over streamable HTTP."""
 import json
 
-import pytest
 from fastapi import FastAPI
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client  # noqa: F401 (stable across 1.x)
