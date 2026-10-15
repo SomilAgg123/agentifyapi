@@ -1,8 +1,8 @@
 # agentifyapi
 
 [![CI](https://github.com/SomilAgg123/agentifyapi/actions/workflows/ci.yml/badge.svg)](https://github.com/SomilAgg123/agentifyapi/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/agentifyapi.svg)](https://pypi.org/project/agentifyapi/)
-[![Python versions](https://img.shields.io/pypi/pyversions/agentifyapi.svg)](https://pypi.org/project/agentifyapi/)
+[![PyPI](https://img.shields.io/pypi/v/agentifyapi?label=PyPI)](https://pypi.org/project/agentifyapi/)
+[![Python versions](https://img.shields.io/pypi/pyversions/agentifyapi?label=python)](https://pypi.org/project/agentifyapi/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Make your FastAPI services agent-ready with owner-approved MCP tools.**
