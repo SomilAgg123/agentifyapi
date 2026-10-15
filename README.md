@@ -1,5 +1,10 @@
 # agentifyapi
 
+[![CI](https://github.com/SomilAgg123/agentifyapi/actions/workflows/ci.yml/badge.svg)](https://github.com/SomilAgg123/agentifyapi/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/agentifyapi.svg)](https://pypi.org/project/agentifyapi/)
+[![Python versions](https://img.shields.io/pypi/pyversions/agentifyapi.svg)](https://pypi.org/project/agentifyapi/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Make your FastAPI services agent-ready with owner-approved MCP tools.**
 
 Coding agents (Claude Code, Cursor, Codex) and production agents increasingly need to call your
@@ -8,20 +13,42 @@ apps directly and turns every route into an MCP tool. Each tool stays hidden unt
 approves it. **Discovery doesn't imply exposure.** Agents get one MCP endpoint with incremental
 discovery, response projection, per-caller policy, PII redaction and an audit log.
 
+## Quickstart
+
 ```python
 from fastapi import FastAPI
 from agentifyapi import mount
 
-app = FastAPI()
-# ... your routes ...
-mount(app)  # adds a governed /mcp endpoint and a /mcp-admin review UI
+app = FastAPI()      # your existing app and routes
+mount(app)           # adds a governed /mcp endpoint and a /mcp-admin review UI
 ```
 
 ```bash
-agentifyapi crawl --app myservice.main:app --owner team-payments   # routes, Pydantic models, docstrings, Depends()
-agentifyapi tools diff myservice.get_invoice                       # review what agents will see
-agentifyapi tools approve myservice.get_invoice && agentifyapi tools enable myservice.get_invoice
+pip install agentifyapi                                # PyPI release pending; until then: pip install git+https://github.com/SomilAgg123/agentifyapi
+agentifyapi --db agentifyapi.db tools list             # every route starts disabled
+agentifyapi --db agentifyapi.db tools approve myapp.get_invoice && agentifyapi --db agentifyapi.db tools enable myapp.get_invoice
 ```
+
+For many services behind one gateway, see [Standalone gateway](#standalone-gateway-demo).
+
+## How this differs from fastapi_mcp and FastMCP
+
+[fastapi_mcp](https://github.com/tadata-org/fastapi_mcp) and [FastMCP](https://github.com/PrefectHQ/fastmcp)
+(`FastMCP.from_fastapi` / `from_openapi`) are the quickest ways to expose FastAPI routes as MCP tools.
+Use them if you want every selected route live immediately. agentifyapi converts routes too, but its focus
+is what happens *around* the tools when many teams' APIs are involved.
+
+| | agentifyapi |
+|---|---|
+| Approval | New and changed tools wait in a pending state until an owner approves and enables them. |
+| Change control | Each tool has versioned revisions with a reviewable diff and one-command rollback. |
+| Policy | Per-caller and per-role allow-lists by API key, default deny. |
+| Data protection | PII redaction (emails, phones, SSNs, Luhn-checked cards) and response projection. |
+| Audit | A JSON-lines record of every call: caller, decision, status, redaction count. |
+| Discovery at scale | Four meta-tools (`discover_servers`, `list_tools`, `get_tool_schema`, `invoke_tool`) instead of one huge tool list. |
+
+The other projects have strengths this one doesn't, such as broader MCP feature coverage and
+richer authentication. agentifyapi is young (0.x).
 
 > Inspired by Uber's [Designing MCP Gateway](https://www.uber.com/blog/designing-mcp-gateway/), rebuilt as a small
 > open-source project for the FastAPI ecosystem. Not affiliated with Uber.
@@ -56,11 +83,11 @@ Two deployment shapes share the same core.
 * **Embedded.** `mount(app)` serves one service with in-process dispatch and no extra deployment.
 * **Standalone gateway.** `agentifyapi serve` puts many services behind one MCP endpoint and re-crawls them on an interval.
 
-## Quickstart
+## Standalone gateway demo
 
 ```bash
 git clone https://github.com/SomilAgg123/agentifyapi && cd agentifyapi
-pip install -e ".[dev]"          # or: uv pip install -e ".[dev]"
+uv sync                          # or: pip install -e ".[dev]"
 make demo                        # = python scripts/run_demo.py  (no Docker needed)
 ```
 
@@ -151,8 +178,11 @@ policy:
 ## Development
 
 ```bash
-pip install -e ".[dev]" && pytest -q && make verify
+uv sync && uv run pre-commit install
+uv run pytest --cov && uv run pyright && uv run python scripts/verify_demo.py
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md) for coding agents, and [SECURITY.md](SECURITY.md) to report vulnerabilities.
 
 The tests cover schema translation, FastAPI introspection, the crawler and approval flow (with a
 fake spec), the CLI, the admin UI, projection, redaction, and policy. Two end-to-end runs go over
