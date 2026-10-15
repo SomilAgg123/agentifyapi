@@ -23,7 +23,8 @@ For coding agents. Read `docs/DESIGN.md` before changing behaviour.
 uv sync --locked
 uv run ruff check . && uv run ruff format --check . && uv run pyright
 uv run pytest --cov
-uv run python scripts/verify_demo.py   # boots the real demo and checks it
+uv run python scripts/verify_quickstart.py  # README example (mount → approve → call)
+uv run python scripts/verify_demo.py         # multi-service gateway demo
 ```
 
 ## Tests

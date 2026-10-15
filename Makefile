@@ -1,8 +1,10 @@
-.PHONY: install test demo verify demo-docker
+.PHONY: install test demo verify verify-quickstart demo-docker
 install:
 	pip install -e ".[dev]"
 test:
 	pytest -q
+verify-quickstart:
+	python scripts/verify_quickstart.py
 verify:
 	python scripts/verify_demo.py
 demo:
