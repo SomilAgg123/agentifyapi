@@ -7,29 +7,48 @@
 
 **Make your FastAPI services agent-ready with owner-approved MCP tools.**
 
-Coding agents (Claude Code, Cursor, Codex) and production agents increasingly need to call your
-company's internal APIs, and many of those APIs are Python + FastAPI. `agentifyapi` reads your FastAPI
-apps directly and turns every route into an MCP tool. Each tool stays hidden until its owner
-approves it. **Discovery doesn't imply exposure.** Agents get one MCP endpoint with incremental
-discovery, response projection, per-caller policy, PII redaction and an audit log.
+## Example
 
-## Quickstart
+A tiny FastAPI app. One `mount(app)` call adds a governed `/mcp` endpoint. Routes become MCP tools,
+but they stay hidden until you approve them.
 
 ```python
+# examples/quickstart.py
 from fastapi import FastAPI
 from agentifyapi import mount
+from agentifyapi.config import PolicyConfig
 
-app = FastAPI()  # your existing app and routes
-mount(app)  # adds a governed /mcp endpoint and a /mcp-admin review UI
+app = FastAPI(title="inventory")
+
+
+@app.get("/stock/{sku}")
+def get_stock(sku: str) -> dict:
+    """Units on hand for a SKU."""
+    return {"sku": sku, "on_hand": 42, "warehouse": "nyc"}
+
+
+mount(app, owner="you", database="quickstart.db", policy=PolicyConfig(allow_anonymous=True))  # local demo only
 ```
 
 ```bash
-pip install agentifyapi                                # PyPI release pending; until then: pip install git+https://github.com/SomilAgg123/agentifyapi
-agentifyapi --db agentifyapi.db tools list             # every route starts disabled
-agentifyapi --db agentifyapi.db tools approve myapp.get_invoice && agentifyapi --db agentifyapi.db tools enable myapp.get_invoice
+uvicorn examples.quickstart:app --port 8200
+# another terminal:
+agentifyapi --db quickstart.db tools list
+# inventory.get_stock   -   disabled   1
+agentifyapi --db quickstart.db tools approve inventory.get_stock --by you
+agentifyapi --db quickstart.db tools enable inventory.get_stock
 ```
 
-For many services behind one gateway, see [Standalone gateway](#standalone-gateway-demo).
+An MCP client pointed at `http://127.0.0.1:8200/mcp` then discovers and calls the tool:
+
+```text
+>>> list_tools(server="inventory")          # before approve → []
+>>> invoke_tool(tool="inventory.get_stock", args={"sku": "KB-1"})
+{"sku": "KB-1", "on_hand": 42, "warehouse": "nyc"}
+```
+
+Run the whole flow yourself with `python scripts/verify_quickstart.py` (CI runs this on every push).
+For many services behind one gateway, see [Standalone gateway demo](#standalone-gateway-demo).
 
 ## How this differs from fastapi_mcp and FastMCP
 
@@ -49,6 +68,7 @@ is what happens *around* the tools when many teams' APIs are involved.
 
 The other projects have strengths this one doesn't, such as broader MCP feature coverage and
 richer authentication. agentifyapi is young (0.x).
+
 
 > Inspired by Uber's [Designing MCP Gateway](https://www.uber.com/blog/designing-mcp-gateway/), rebuilt as a small
 > open-source project for the FastAPI ecosystem. Not affiliated with Uber.
@@ -179,7 +199,9 @@ policy:
 
 ```bash
 uv sync && uv run pre-commit install
-uv run pytest --cov && uv run pyright && uv run python scripts/verify_demo.py
+uv run pytest --cov && uv run pyright
+uv run python scripts/verify_quickstart.py   # README example
+uv run python scripts/verify_demo.py         # multi-service gateway
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md) for coding agents, and [SECURITY.md](SECURITY.md) to report vulnerabilities.
