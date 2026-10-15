@@ -8,6 +8,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ### Added
 
+- README PyPI and Python-version badges use distinct shields.io URLs so GitHub fetches the live
+  `agentifyapi` 0.1.0 images.
 - README install section (`pip install agentifyapi`, plus the latest commit on main) and a three-column
   comparison with fastapi_mcp and FastMCP.
 - README front-and-center example (`examples/quickstart.py`) with `scripts/verify_quickstart.py` in CI.
