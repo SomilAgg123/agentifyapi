@@ -29,7 +29,7 @@ dependencies = [
   "pydantic>=2.6",
   "pyyaml>=6",
   # Stable 1.x line (lowlevel Server + streamable HTTP). 2.x renames APIs; see docs/DESIGN.md.
-  "mcp>=1.12,<2",
+  "mcp>=1.12,<3",
 ]
 
 [project.urls]
