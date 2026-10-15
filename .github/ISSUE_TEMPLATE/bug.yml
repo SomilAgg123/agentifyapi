@@ -1,0 +1,28 @@
+name: Bug report
+description: Something doesn't work as documented.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you saw instead.
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: A small FastAPI app and the agentifyapi command or `mount()` call that shows the problem.
+      render: python
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes:
+      label: Versions
+      placeholder: "agentifyapi 0.1.0, fastapi 0.115, mcp 1.30, Python 3.12"
+    validations: { required: true }
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or traceback
+      render: text
