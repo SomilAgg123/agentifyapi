@@ -30,7 +30,9 @@ def fetch_spec(svc: ServiceConfig, app=None) -> tuple[dict, dict, str]:
             log.warning("import of %s failed (%s); falling back to HTTP", svc.app, exc)
     if svc.proto:
         raise NotImplementedError("Protobuf/gRPC crawling is a roadmap item; see docs/DESIGN.md")
-    url = svc.openapi_url or (svc.base_url or "").rstrip("/") + "/openapi.json"
+    url = svc.openapi_url or (svc.base_url or "").rstrip("/")
+    if not url.endswith(".json"):
+        url += "/openapi.json"
     r = httpx.get(url, timeout=15)
     r.raise_for_status()
     return r.json(), {}, f"openapi:{url}"
