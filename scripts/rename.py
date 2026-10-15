@@ -19,6 +19,9 @@ def main(new: str) -> None:
         out = text.replace(OLD, new).replace(OLD.upper(), new.upper())
         if out != text:
             p.write_text(out)
+    for f in files:
+        if OLD in Path(f).name and Path(f).exists():
+            subprocess.run(["git", "mv", f, str(Path(f).with_name(Path(f).name.replace(OLD, new)))], check=True)
     subprocess.run(["git", "mv", f"src/{OLD}", f"src/{new}"], check=True)
     print(f"renamed {OLD} -> {new}; run `pip install -e .[dev] && pytest -q`")
 

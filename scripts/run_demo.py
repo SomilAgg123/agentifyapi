@@ -1,5 +1,6 @@
 """One-command demo, no Docker: start mock services, crawl, approve, serve, run the agent."""
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -30,6 +31,7 @@ def wait(url):
 
 
 procs = []
+signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))  # so `finally` stops the child servers
 try:
     Path("demo.db").unlink(missing_ok=True)
     for mod, port in (("orders", 8101), ("users", 8102)):
