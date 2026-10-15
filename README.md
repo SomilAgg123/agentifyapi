@@ -19,8 +19,8 @@ discovery, response projection, per-caller policy, PII redaction and an audit lo
 from fastapi import FastAPI
 from agentifyapi import mount
 
-app = FastAPI()      # your existing app and routes
-mount(app)           # adds a governed /mcp endpoint and a /mcp-admin review UI
+app = FastAPI()  # your existing app and routes
+mount(app)  # adds a governed /mcp endpoint and a /mcp-admin review UI
 ```
 
 ```bash
