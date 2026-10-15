@@ -14,7 +14,7 @@ from agentifyapi import mount
 
 app = FastAPI()
 # ... your routes ...
-mount(app)            # adds a governed /mcp endpoint and a /mcp-admin review UI
+mount(app)  # adds a governed /mcp endpoint and a /mcp-admin review UI
 ```
 
 ```bash

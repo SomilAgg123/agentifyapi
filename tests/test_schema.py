@@ -4,16 +4,36 @@ SPEC = {
     "openapi": "3.1.0",
     "paths": {
         "/pets/{pet_id}": {
-            "get": {"operationId": "get_pet_pets__pet_id__get", "summary": "Get Pet",
-                    "parameters": [{"name": "pet_id", "in": "path", "required": True, "schema": {"type": "integer"}},
-                                   {"name": "verbose", "in": "query", "schema": {"type": "boolean"}}],
-                    "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Pet"}}}}}},
+            "get": {
+                "operationId": "get_pet_pets__pet_id__get",
+                "summary": "Get Pet",
+                "parameters": [
+                    {"name": "pet_id", "in": "path", "required": True, "schema": {"type": "integer"}},
+                    {"name": "verbose", "in": "query", "schema": {"type": "boolean"}},
+                ],
+                "responses": {
+                    "200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Pet"}}}}
+                },
+            },
         },
-        "/pets": {"post": {"summary": "Create Pet", "requestBody": {"required": True, "content": {
-            "application/json": {"schema": {"$ref": "#/components/schemas/Pet"}}}}}},
+        "/pets": {
+            "post": {
+                "summary": "Create Pet",
+                "requestBody": {
+                    "required": True,
+                    "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Pet"}}},
+                },
+            }
+        },
     },
-    "components": {"schemas": {"Pet": {"type": "object", "properties": {
-        "name": {"type": "string"}, "friend": {"$ref": "#/components/schemas/Pet"}}}}},
+    "components": {
+        "schemas": {
+            "Pet": {
+                "type": "object",
+                "properties": {"name": {"type": "string"}, "friend": {"$ref": "#/components/schemas/Pet"}},
+            }
+        }
+    },
 }
 
 

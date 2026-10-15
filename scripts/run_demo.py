@@ -1,4 +1,5 @@
 """One-command demo, no Docker: start mock services, crawl, approve, serve, run the agent."""
+
 import os
 import signal
 import subprocess
@@ -12,7 +13,11 @@ ROOT = Path(__file__).resolve().parent.parent
 os.chdir(ROOT)
 PY = sys.executable
 CFG = "examples/agentifyapi.yaml"
-env = {**os.environ, "PYTHONPATH": f"{ROOT}:{ROOT / 'src'}", "AGENTIFYAPI_DESCRIBER": os.getenv("AGENTIFYAPI_DESCRIBER", "auto")}
+env = {
+    **os.environ,
+    "PYTHONPATH": f"{ROOT}:{ROOT / 'src'}",
+    "AGENTIFYAPI_DESCRIBER": os.getenv("AGENTIFYAPI_DESCRIBER", "auto"),
+}
 
 
 def agentifyapi(*a):
@@ -35,8 +40,12 @@ signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))  # so `finally` stops th
 try:
     Path("demo.db").unlink(missing_ok=True)
     for mod, port in (("orders", 8101), ("users", 8102)):
-        procs.append(subprocess.Popen([PY, "-m", "uvicorn", f"examples.services.{mod}:app", "--port", str(port),
-                                       "--log-level", "warning"], env=env))
+        procs.append(
+            subprocess.Popen(
+                [PY, "-m", "uvicorn", f"examples.services.{mod}:app", "--port", str(port), "--log-level", "warning"],
+                env=env,
+            )
+        )
         wait(f"http://127.0.0.1:{port}/openapi.json")
     agentifyapi("crawl")
     agentifyapi("tools", "list")

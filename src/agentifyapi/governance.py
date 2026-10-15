@@ -1,4 +1,5 @@
 """Runtime governance: caller policy, PII redaction, response projection, audit log."""
+
 from __future__ import annotations
 
 import fnmatch
@@ -70,6 +71,7 @@ def redact_text(text: str) -> tuple[str, int]:
                 return m.group()
             count += 1
             return f"[REDACTED:{kind}]"
+
         return _r
 
     for kind in ("email", "ssn", "card", "phone"):  # order matters: cards before phones

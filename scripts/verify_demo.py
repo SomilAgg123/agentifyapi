@@ -1,4 +1,5 @@
 """Prove the real demo works: boot `run_demo.py --keep`, then check what an agent and an owner see."""
+
 import asyncio
 import json
 import os
@@ -10,9 +11,16 @@ from pathlib import Path
 import httpx
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
+from mcp.types import CallToolResult, TextContent
 
 ROOT = Path(__file__).resolve().parent.parent
 GW = "http://127.0.0.1:8000"
+
+
+def text_of(res: CallToolResult) -> str:
+    block = res.content[0]
+    assert isinstance(block, TextContent), f"expected text content, got {type(block).__name__}"
+    return block.text
 
 
 async def call(key, tool, args, path="/mcp"):
@@ -20,7 +28,7 @@ async def call(key, tool, args, path="/mcp"):
         async with ClientSession(r, w) as s:
             await s.initialize()
             res = await s.call_tool(tool, args)
-            return res.isError, res.content[0].text
+            return res.isError, text_of(res)
 
 
 async def checks():
@@ -38,8 +46,11 @@ async def checks():
     got = [t["tool"] for t in json.loads(text)]
     check("only approved+enabled tools are listed", got == ["users.get_user"], got)
 
-    err, text = await call("demo-support-key", "invoke_tool",
-                           {"tool": "orders.get_order", "args": {"order_id": 101}, "fields": ["id", "card_number"]})
+    err, text = await call(
+        "demo-support-key",
+        "invoke_tool",
+        {"tool": "orders.get_order", "args": {"order_id": 101}, "fields": ["id", "card_number"]},
+    )
     check("projection + card redaction", json.loads(text) == {"id": 101, "card_number": "[REDACTED:card]"}, text)
 
     err, text = await call("demo-readonly-key", "invoke_tool", {"tool": "users.get_user", "args": {"user_id": 1}})
@@ -50,24 +61,38 @@ async def checks():
 
     err, text = await call("demo-support-key", "get_user", {"user_id": 2}, path="/servers/users/mcp")
     got = json.loads(text)
-    check("per-server endpoint + email/phone redaction",
-          got == {"id": 2, "name": "Alan Turing", "email": "[REDACTED:email]", "phone": "[REDACTED:phone]",
-                  "tier": "basic"}, got)
+    check(
+        "per-server endpoint + email/phone redaction",
+        got
+        == {"id": 2, "name": "Alan Turing", "email": "[REDACTED:email]", "phone": "[REDACTED:phone]", "tier": "basic"},
+        got,
+    )
 
     page = httpx.get(GW + "/admin/tools/users.search_users").text
-    check("admin UI shows pending revision with approve button", "Approve pending" in page and "pending" in page,
-          page[:200])
+    check(
+        "admin UI shows pending revision with approve button",
+        "Approve pending" in page and "pending" in page,
+        page[:200],
+    )
 
     last = json.loads((ROOT / "audit.log").read_text().splitlines()[-1])
-    check("audit log records caller and redaction count",
-          (last["tool"], last["caller"], last["redactions"]) == ("users.get_user", "support-agent", 2), last)
+    check(
+        "audit log records caller and redaction count",
+        (last["tool"], last["caller"], last["redactions"]) == ("users.get_user", "support-agent", 2),
+        last,
+    )
     return all(results)
 
 
 def main():
     env = {**os.environ, "AGENTIFYAPI_DESCRIBER": "template"}
-    demo = subprocess.Popen([sys.executable, str(ROOT / "scripts/run_demo.py"), "--keep"], cwd=ROOT, env=env,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    demo = subprocess.Popen(
+        [sys.executable, str(ROOT / "scripts/run_demo.py"), "--keep"],
+        cwd=ROOT,
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     try:
         for _ in range(300):
             try:

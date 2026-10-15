@@ -10,18 +10,20 @@ One low-level MCP server, served over streamable HTTP, answers on two kinds of p
 Only approved + enabled tool versions are ever visible. Every invocation goes through
 policy -> HTTP forward -> projection -> PII redaction -> audit.
 """
+
 from __future__ import annotations
 
 import contextlib
 import json
 import time
+from typing import Any, cast
 from urllib.parse import quote
-from typing import Any
 
 import httpx
 import mcp.types as types
 from mcp.server.lowlevel import Server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
+from starlette.requests import Request
 from starlette.routing import Route
 
 from .config import Settings
@@ -29,24 +31,49 @@ from .governance import AuditLog, is_allowed, project, redact, resolve_caller
 from .registry import Registry
 
 META_TOOLS = [
-    types.Tool(name="discover_servers", description=(
-        "Find internal services (virtual MCP servers) relevant to a task. Start here. "
-        "Returns server names, owners and how many tools each has."),
-        inputSchema={"type": "object", "properties": {"query": {"type": "string",
-                     "description": "Free-text keywords, e.g. 'refund order'. Empty lists all."}}}),
-    types.Tool(name="list_tools", description=(
-        "List the enabled tools of one server with one-line descriptions (no schemas)."),
-        inputSchema={"type": "object", "properties": {"server": {"type": "string"},
-                     "query": {"type": "string"}}, "required": ["server"]}),
-    types.Tool(name="get_tool_schema", description=(
-        "Get the full input schema and description for one tool before calling it."),
-        inputSchema={"type": "object", "properties": {"tool": {"type": "string"}}, "required": ["tool"]}),
-    types.Tool(name="invoke_tool", description=(
-        "Call a tool. `args` must match its input schema (path/query params by name, JSON body "
-        "under 'body'). Pass `fields` (dotted paths, e.g. ['id','items.sku']) to return only what you need."),
-        inputSchema={"type": "object", "properties": {
-            "tool": {"type": "string"}, "args": {"type": "object"},
-            "fields": {"type": "array", "items": {"type": "string"}}}, "required": ["tool"]}),
+    types.Tool(
+        name="discover_servers",
+        description=(
+            "Find internal services (virtual MCP servers) relevant to a task. Start here. "
+            "Returns server names, owners and how many tools each has."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Free-text keywords, e.g. 'refund order'. Empty lists all."}
+            },
+        },
+    ),
+    types.Tool(
+        name="list_tools",
+        description=("List the enabled tools of one server with one-line descriptions (no schemas)."),
+        inputSchema={
+            "type": "object",
+            "properties": {"server": {"type": "string"}, "query": {"type": "string"}},
+            "required": ["server"],
+        },
+    ),
+    types.Tool(
+        name="get_tool_schema",
+        description=("Get the full input schema and description for one tool before calling it."),
+        inputSchema={"type": "object", "properties": {"tool": {"type": "string"}}, "required": ["tool"]},
+    ),
+    types.Tool(
+        name="invoke_tool",
+        description=(
+            "Call a tool. `args` must match its input schema (path/query params by name, JSON body "
+            "under 'body'). Pass `fields` (dotted paths, e.g. ['id','items.sku']) to return only what you need."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "tool": {"type": "string"},
+                "args": {"type": "object"},
+                "fields": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["tool"],
+        },
+    ),
 ]
 
 
@@ -77,9 +104,14 @@ class Gateway:
             tools = self.registry.tools(s["name"], enabled_only=True)
             if not tools:
                 continue
-            blob = s["name"] + " " + " ".join(
-                t["name"] + " " + (self.registry.live_definition(t["name"]) or {}).get("description", "")
-                for t in tools)
+            blob = (
+                s["name"]
+                + " "
+                + " ".join(
+                    t["name"] + " " + (self.registry.live_definition(t["name"]) or {}).get("description", "")
+                    for t in tools
+                )
+            )
             score = _score(blob, query) if query else 1
             if score:
                 out.append({"server": s["name"], "owner": s["owner"], "tools": len(tools), "_score": score})
@@ -98,16 +130,26 @@ class Gateway:
         d = self.registry.live_definition(tool)
         if not d:
             raise ToolError(f"tool {tool!r} is not available (unknown, not approved, or disabled)")
-        return {"tool": d["name"], "description": d.get("description", ""), "input_schema": d["input_schema"],
-                "output_schema": d.get("output_schema"), "side_effects": d["method"] != "GET"}
+        return {
+            "tool": d["name"],
+            "description": d.get("description", ""),
+            "input_schema": d["input_schema"],
+            "output_schema": d.get("output_schema"),
+            "side_effects": d["method"] != "GET",
+        }
 
     # ------------------------------------------------------------ invocation
     async def invoke(self, tool: str, args: dict | None, fields: list[str] | None, api_key: str | None) -> Any:
         args = dict(args or {})
         caller = resolve_caller(self.settings.policy, api_key)
         started = time.time()
-        event: dict[str, Any] = {"event": "invoke", "tool": tool, "caller": caller.name,
-                                 "arg_keys": sorted(args), "fields": fields}
+        event: dict[str, Any] = {
+            "event": "invoke",
+            "tool": tool,
+            "caller": caller.name,
+            "arg_keys": sorted(args),
+            "fields": fields,
+        }
         try:
             d = self.registry.live_definition(tool)
             if not d:
@@ -156,12 +198,13 @@ class Gateway:
                 raise ToolError(f"server {server!r} has no base_url configured")
             base = srv["base_url"]
         async with httpx.AsyncClient(base_url=base, transport=transport, timeout=30) as client:
-            return await client.request(method, path, params=params, headers=headers,
-                                        json=body if body is not None else None)
+            return await client.request(
+                method, path, params=params, headers=headers, json=body if body is not None else None
+            )
 
     # ------------------------------------------------------------ MCP wiring
     def _request_info(self) -> tuple[str, str | None]:
-        req = self.server.request_context.request
+        req = cast(Request | None, self.server.request_context.request)
         path = req.url.path if req is not None else "/mcp"
         key = None
         if req is not None:
@@ -193,10 +236,15 @@ class Gateway:
                 if d:
                     schema = json.loads(json.dumps(d["input_schema"]))
                     schema.setdefault("properties", {})["_fields"] = {
-                        "type": "array", "items": {"type": "string"},
-                        "description": "Optional response projection (dotted paths)."}
-                    out.append(types.Tool(name=d["name"].split(".", 1)[1], description=d.get("description", ""),
-                                          inputSchema=schema))
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional response projection (dotted paths).",
+                    }
+                    out.append(
+                        types.Tool(
+                            name=d["name"].split(".", 1)[1], description=d.get("description", ""), inputSchema=schema
+                        )
+                    )
             return out
 
         @srv.call_tool()
@@ -215,8 +263,7 @@ class Gateway:
                 elif name == "get_tool_schema":
                     result = self.get_tool_schema(arguments["tool"])
                 elif name == "invoke_tool":
-                    result = await self.invoke(arguments["tool"], arguments.get("args"),
-                                               arguments.get("fields"), key)
+                    result = await self.invoke(arguments["tool"], arguments.get("args"), arguments.get("fields"), key)
                 else:
                     raise ToolError(f"unknown tool {name!r}")
             except ToolError as exc:
@@ -228,8 +275,7 @@ class Gateway:
 
     def routes(self, prefix: str = "") -> list[Route]:
         app = _ASGIEndpoint(self)  # a plain ASGI callable (not a function) so Starlette passes it raw
-        return [Route(f"{prefix}/mcp", endpoint=app),
-                Route(f"{prefix}/servers/{{name}}/mcp", endpoint=app)]
+        return [Route(f"{prefix}/mcp", endpoint=app), Route(f"{prefix}/servers/{{name}}/mcp", endpoint=app)]
 
     @contextlib.asynccontextmanager
     async def lifespan(self):

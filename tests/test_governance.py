@@ -1,10 +1,15 @@
 from agentifyapi.config import PolicyConfig
 from agentifyapi.governance import is_allowed, project, redact, redact_text, resolve_caller
 
-POLICY = PolicyConfig.model_validate({
-    "api_keys": {"k1": {"name": "support", "roles": ["support"]}, "k2": {"name": "bi", "roles": ["readonly"]}},
-    "rules": [{"tools": ["orders.*"], "roles": ["support"]}, {"tools": ["orders.get_order"], "roles": ["readonly"]}],
-})
+POLICY = PolicyConfig.model_validate(
+    {
+        "api_keys": {"k1": {"name": "support", "roles": ["support"]}, "k2": {"name": "bi", "roles": ["readonly"]}},
+        "rules": [
+            {"tools": ["orders.*"], "roles": ["support"]},
+            {"tools": ["orders.get_order"], "roles": ["readonly"]},
+        ],
+    }
+)
 
 
 def test_policy():
@@ -20,7 +25,7 @@ def test_policy():
 def test_redaction():
     text, n = redact_text("mail a.b@x.io, call +1 (415) 555-0101, ssn 123-45-6789, card 4242 4242 4242 4242")
     assert n == 4 and "@" not in text and "4242" not in text and "6789" not in text
-    assert redact_text("order 1234567890123 total")[1] == 0     # non-Luhn long number kept
+    assert redact_text("order 1234567890123 total")[1] == 0  # non-Luhn long number kept
     out, n = redact({"u": [{"email": "z@z.com"}], "id": 7})
     assert out == {"u": [{"email": "[REDACTED:email]"}], "id": 7} and n == 1
 

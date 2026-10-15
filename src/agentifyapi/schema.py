@@ -4,6 +4,7 @@ A tool definition is a plain dict (stored as JSON in the registry):
   {name, server, method, path, path_params, query_params, header_params,
    has_body, input_schema, output_schema, summary, description, tags, dependencies}
 """
+
 from __future__ import annotations
 
 import copy
@@ -45,8 +46,9 @@ def tool_slug(operation: dict, method: str, path: str) -> str:
     return re.sub(r"[^a-zA-Z0-9]+", "_", f"{method}_{path}").strip("_").lower()
 
 
-def operation_to_tool(server: str, method: str, path: str, operation: dict, spec: dict,
-                      name: str | None = None) -> dict:
+def operation_to_tool(
+    server: str, method: str, path: str, operation: dict, spec: dict, name: str | None = None
+) -> dict:
     op = resolve_refs(operation, spec)
     props: dict[str, Any] = {}
     required: list[str] = []
@@ -109,14 +111,27 @@ def spec_to_tools(server: str, spec: dict, names: dict[tuple[str, str], str] | N
                 op = item[method]
                 if op.get("x-agentifyapi-exclude"):
                     continue
-                tools.append(operation_to_tool(server, method, path, op, spec,
-                                               (names or {}).get((method.upper(), path))))
+                tools.append(
+                    operation_to_tool(server, method, path, op, spec, (names or {}).get((method.upper(), path)))
+                )
     return tools
 
 
 def definition_hash(tool: dict) -> str:
     """Hash of the *contract* only (not the generated description), so a
     non-deterministic LLM description never creates a spurious revision."""
-    contract = {k: tool.get(k) for k in ("method", "path", "input_schema", "output_schema",
-                                          "path_params", "query_params", "header_params", "doc", "summary")}
+    contract = {
+        k: tool.get(k)
+        for k in (
+            "method",
+            "path",
+            "input_schema",
+            "output_schema",
+            "path_params",
+            "query_params",
+            "header_params",
+            "doc",
+            "summary",
+        )
+    }
     return hashlib.sha256(json.dumps(contract, sort_keys=True).encode()).hexdigest()[:16]

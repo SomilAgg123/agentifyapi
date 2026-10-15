@@ -1,4 +1,5 @@
 """Mock orders service."""
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -26,10 +27,21 @@ class NewOrder(BaseModel):
 
 
 ORDERS = {
-    101: Order(id=101, user_id=1, status="shipped", items=[Item(sku="KB-1", qty=1, price_cents=12900)],
-               card_number="4242 4242 4242 4242", shipping_note="Call 415-555-0101 on arrival"),
-    102: Order(id=102, user_id=2, status="processing", items=[Item(sku="MS-2", qty=2, price_cents=4900)],
-               card_number="5555 5555 5555 4444"),
+    101: Order(
+        id=101,
+        user_id=1,
+        status="shipped",
+        items=[Item(sku="KB-1", qty=1, price_cents=12900)],
+        card_number="4242 4242 4242 4242",
+        shipping_note="Call 415-555-0101 on arrival",
+    ),
+    102: Order(
+        id=102,
+        user_id=2,
+        status="processing",
+        items=[Item(sku="MS-2", qty=2, price_cents=4900)],
+        card_number="5555 5555 5555 4444",
+    ),
 }
 
 
@@ -44,8 +56,11 @@ def get_order(order_id: int) -> Order:
 @app.get("/orders", response_model=list[Order], tags=["orders"])
 def list_orders(user_id: int | None = None, status: str | None = None) -> list[Order]:
     """List orders, filtered by customer and/or status."""
-    return [o for o in ORDERS.values() if (user_id is None or o.user_id == user_id)
-            and (status is None or o.status == status)]
+    return [
+        o
+        for o in ORDERS.values()
+        if (user_id is None or o.user_id == user_id) and (status is None or o.status == status)
+    ]
 
 
 @app.post("/orders", response_model=Order, status_code=201, tags=["orders"])

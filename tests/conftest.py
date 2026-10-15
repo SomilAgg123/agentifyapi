@@ -42,4 +42,5 @@ def serve():
 @pytest.fixture
 def registry(tmp_path):
     from agentifyapi.registry import Registry
+
     return Registry(str(tmp_path / "r.db"))

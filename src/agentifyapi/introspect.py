@@ -5,6 +5,7 @@ can recover things OpenAPI loses: the route function name (clean tool names), th
 docstring, and the dependency graph (e.g. `Depends(require_admin)`), which owners see during
 review. Pydantic models still flow through FastAPI's own app.openapi() so schemas are exact.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -57,6 +58,6 @@ def introspect_app(app) -> tuple[dict, dict[tuple[str, str], str]]:
                 op["description"] = doc
             if deps:
                 op["x-agentifyapi-dependencies"] = deps
-            if getattr(route, "openapi_extra", None) and route.openapi_extra.get("x-agentifyapi-exclude"):
+            if (route.openapi_extra or {}).get("x-agentifyapi-exclude"):
                 op["x-agentifyapi-exclude"] = True
     return spec, names
