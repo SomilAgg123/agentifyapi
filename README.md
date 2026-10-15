@@ -1,16 +1,16 @@
-# mcpify
+# agentifyapi
 
 **Make your FastAPI services agent-ready with owner-approved MCP tools.**
 
 Coding agents (Claude Code, Cursor, Codex) and production agents increasingly need to call your
-company's internal APIs, and many of those APIs are Python + FastAPI. `mcpify` reads your FastAPI
+company's internal APIs, and many of those APIs are Python + FastAPI. `agentifyapi` reads your FastAPI
 apps directly and turns every route into an MCP tool. Each tool stays hidden until its owner
 approves it. **Discovery doesn't imply exposure.** Agents get one MCP endpoint with incremental
 discovery, response projection, per-caller policy, PII redaction and an audit log.
 
 ```python
 from fastapi import FastAPI
-from mcpify import mount
+from agentifyapi import mount
 
 app = FastAPI()
 # ... your routes ...
@@ -18,9 +18,9 @@ mount(app)            # adds a governed /mcp endpoint and a /mcp-admin review UI
 ```
 
 ```bash
-mcpify crawl --app myservice.main:app --owner team-payments   # routes, Pydantic models, docstrings, Depends()
-mcpify tools diff myservice.get_invoice                       # review what agents will see
-mcpify tools approve myservice.get_invoice && mcpify tools enable myservice.get_invoice
+agentifyapi crawl --app myservice.main:app --owner team-payments   # routes, Pydantic models, docstrings, Depends()
+agentifyapi tools diff myservice.get_invoice                       # review what agents will see
+agentifyapi tools approve myservice.get_invoice && agentifyapi tools enable myservice.get_invoice
 ```
 
 > Inspired by Uber's [Designing MCP Gateway](https://www.uber.com/blog/designing-mcp-gateway/), rebuilt as a small
@@ -28,7 +28,7 @@ mcpify tools approve myservice.get_invoice && mcpify tools enable myservice.get_
 
 ## Why
 
-| Problem | What mcpify does |
+| Problem | What agentifyapi does |
 |---|---|
 | Your APIs were built before MCP | Converts FastAPI routes (Pydantic models, docstrings, tags, dependencies) into MCP tools. Falls back to any `/openapi.json`. |
 | Auto-generated tools are risky | Every tool starts **disabled**. An owner reviews a diff, approves, and enables it. Spec changes become pending revisions, so the live version never changes silently. Rollback is one command. |
@@ -54,12 +54,12 @@ flowchart LR
 Two deployment shapes share the same core.
 
 * **Embedded.** `mount(app)` serves one service with in-process dispatch and no extra deployment.
-* **Standalone gateway.** `mcpify serve` puts many services behind one MCP endpoint and re-crawls them on an interval.
+* **Standalone gateway.** `agentifyapi serve` puts many services behind one MCP endpoint and re-crawls them on an interval.
 
 ## Quickstart
 
 ```bash
-git clone https://github.com/SomilAgg123/mcpify && cd mcpify
+git clone https://github.com/SomilAgg123/agentifyapi && cd agentifyapi
 pip install -e ".[dev]"          # or: uv pip install -e ".[dev]"
 make demo                        # = python scripts/run_demo.py  (no Docker needed)
 ```
@@ -96,10 +96,10 @@ crawl ──► v1 pending ──approve──► v1 live (disabled) ──enabl
 
 * Changes are detected with a hash of the tool **contract** (method, path, schemas, docs). The
   generated description is excluded, so LLM wording never creates noise revisions.
-* `mcpify tools list | diff | approve | reject | enable | disable | rollback | history <tool>`.
+* `agentifyapi tools list | diff | approve | reject | enable | disable | rollback | history <tool>`.
   `server.*` works for bulk actions. `--by` records the reviewer.
 * The admin UI (`/admin` standalone, `/mcp-admin` embedded) shows the same diff with buttons.
-* To exclude a route entirely, use `@app.post(..., openapi_extra={"x-mcpify-exclude": True})`.
+* To exclude a route entirely, use `@app.post(..., openapi_extra={"x-agentifyapi-exclude": True})`.
 
 ## FastAPI-native introspection
 
@@ -142,8 +142,8 @@ policy:
 
 | Env var | Effect |
 |---|---|
-| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | LLM-written tool descriptions (`MCPIFY_LLM_MODEL` picks the model) |
-| `MCPIFY_DESCRIBER=template` | Force the deterministic template describer |
+| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | LLM-written tool descriptions (`AGENTIFYAPI_LLM_MODEL` picks the model) |
+| `AGENTIFYAPI_DESCRIBER=template` | Force the deterministic template describer |
 
 `mount(app, name=, owner=, database=, policy=, prefix=, admin_path=, auto_approve=False, redact_pii=True, audit_log=)`.
 `auto_approve=True` is for local development only.

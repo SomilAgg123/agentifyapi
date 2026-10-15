@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
 
-from mcpify import create_app
-from mcpify.config import ServiceConfig, Settings
-from mcpify.crawler import crawl_service
+from agentifyapi import create_app
+from agentifyapi.config import ServiceConfig, Settings
+from agentifyapi.crawler import crawl_service
 
 
 def test_admin_ui_review_and_approve(registry):

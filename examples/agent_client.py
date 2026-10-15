@@ -7,8 +7,8 @@ import sys
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-URL = os.getenv("MCPIFY_URL", "http://127.0.0.1:8000/mcp")
-KEY = os.getenv("MCPIFY_API_KEY", "demo-support-key")
+URL = os.getenv("AGENTIFYAPI_URL", "http://127.0.0.1:8000/mcp")
+KEY = os.getenv("AGENTIFYAPI_API_KEY", "demo-support-key")
 
 
 async def call(session, name, **args):

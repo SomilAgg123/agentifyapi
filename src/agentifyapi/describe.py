@@ -37,14 +37,14 @@ def llm_description(tool: dict) -> str | None:
         if os.getenv("ANTHROPIC_API_KEY"):
             r = httpx.post("https://api.anthropic.com/v1/messages", timeout=30, headers={
                 "x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"},
-                json={"model": os.getenv("MCPIFY_LLM_MODEL", "claude-3-5-haiku-latest"), "max_tokens": 200,
+                json={"model": os.getenv("AGENTIFYAPI_LLM_MODEL", "claude-3-5-haiku-latest"), "max_tokens": 200,
                       "messages": [{"role": "user", "content": PROMPT + payload}]})
             r.raise_for_status()
             return r.json()["content"][0]["text"].strip()
         if os.getenv("OPENAI_API_KEY"):
             r = httpx.post("https://api.openai.com/v1/chat/completions", timeout=30,
                            headers={"Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}"},
-                           json={"model": os.getenv("MCPIFY_LLM_MODEL", "gpt-4o-mini"),
+                           json={"model": os.getenv("AGENTIFYAPI_LLM_MODEL", "gpt-4o-mini"),
                                  "messages": [{"role": "user", "content": PROMPT + payload}]})
             r.raise_for_status()
             return r.json()["choices"][0]["message"]["content"].strip()
@@ -54,7 +54,7 @@ def llm_description(tool: dict) -> str | None:
 
 
 def describe(tool: dict) -> str:
-    if os.getenv("MCPIFY_DESCRIBER", "auto") != "template":
+    if os.getenv("AGENTIFYAPI_DESCRIBER", "auto") != "template":
         text = llm_description(tool)
         if text:
             return text

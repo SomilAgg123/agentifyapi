@@ -1,9 +1,9 @@
 import pytest
 
-from mcpify.config import ServiceConfig
-from mcpify.crawler import crawl_service
-from mcpify.registry import RegistryError
-from mcpify.cli import main as cli
+from agentifyapi.config import ServiceConfig
+from agentifyapi.crawler import crawl_service
+from agentifyapi.registry import RegistryError
+from agentifyapi.cli import main as cli
 
 from tests.test_schema import SPEC
 
@@ -11,7 +11,7 @@ from tests.test_schema import SPEC
 def test_approval_flow_and_rollback(registry, monkeypatch):
     import copy
     spec = copy.deepcopy(SPEC)
-    monkeypatch.setattr("mcpify.crawler.fetch_spec", lambda svc, app=None: (spec, {}, "fake"))
+    monkeypatch.setattr("agentifyapi.crawler.fetch_spec", lambda svc, app=None: (spec, {}, "fake"))
     svc = ServiceConfig(name="pets", owner="team-pets", base_url="http://x")
     r = crawl_service(registry, svc)
     assert sorted(r["new"]) == ["pets.get_pet", "pets.post_pets"]

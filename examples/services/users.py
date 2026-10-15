@@ -19,8 +19,8 @@ USERS = {
 }
 
 
-def audit_caller(x_mcpify_caller: str | None = Header(default=None)) -> str | None:
-    return x_mcpify_caller
+def audit_caller(x_agentifyapi_caller: str | None = Header(default=None)) -> str | None:
+    return x_agentifyapi_caller
 
 
 @app.get("/users/{user_id}", response_model=User, tags=["users"])

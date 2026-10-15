@@ -65,7 +65,7 @@ async def checks():
 
 
 def main():
-    env = {**os.environ, "MCPIFY_DESCRIBER": "template"}
+    env = {**os.environ, "AGENTIFYAPI_DESCRIBER": "template"}
     demo = subprocess.Popen([sys.executable, str(ROOT / "scripts/run_demo.py"), "--keep"], cwd=ROOT, env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:

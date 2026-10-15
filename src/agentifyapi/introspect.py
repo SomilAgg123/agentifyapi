@@ -56,7 +56,7 @@ def introspect_app(app) -> tuple[dict, dict[tuple[str, str], str]]:
             if doc and not op.get("description"):
                 op["description"] = doc
             if deps:
-                op["x-mcpify-dependencies"] = deps
-            if getattr(route, "openapi_extra", None) and route.openapi_extra.get("x-mcpify-exclude"):
-                op["x-mcpify-exclude"] = True
+                op["x-agentifyapi-dependencies"] = deps
+            if getattr(route, "openapi_extra", None) and route.openapi_extra.get("x-agentifyapi-exclude"):
+                op["x-agentifyapi-exclude"] = True
     return spec, names

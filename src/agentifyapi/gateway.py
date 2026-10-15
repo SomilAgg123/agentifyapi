@@ -66,7 +66,7 @@ class Gateway:
         self.settings = settings
         self.audit = audit or AuditLog(settings.audit_log)
         self.transports: dict[str, httpx.AsyncBaseTransport] = {}  # server -> in-process ASGI transport
-        self.server = Server("mcpify")
+        self.server = Server("agentifyapi")
         self._register_handlers()
         self.manager = StreamableHTTPSessionManager(app=self.server, stateless=True, json_response=True)
 
@@ -124,7 +124,7 @@ class Gateway:
                 path = path.replace("{" + p + "}", quote(str(args[p]), safe=""))
             params = {q: args[q] for q in d["query_params"] if q in args and args[q] is not None}
             headers = {h: str(args[h]) for h in d["header_params"] if h in args}
-            headers["x-mcpify-caller"] = caller.name
+            headers["x-agentifyapi-caller"] = caller.name
             body = args.get("body") if d["has_body"] else None
             resp = await self._send(d["server"], d["method"], path, params, headers, body)
             event["status"] = resp.status_code

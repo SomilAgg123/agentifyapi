@@ -14,6 +14,6 @@ Short, dated record of choices made while building v1. Longer rationale is in [D
 | 2026-10-15 | Default-deny policy with API key mapped to caller and roles; `allow_anonymous` for dev only | Safe default without needing an identity provider in v1. | OAuth in v1 (on the roadmap). |
 | 2026-10-15 | Card redaction requires a Luhn-valid number | Plain regex would destroy order IDs and other long numbers. | Regex only. |
 | 2026-10-15 | `scripts/verify_demo.py` proves the real running demo with literal assertions | Unit tests alone don't prove the demo a user runs. It checks 8 behaviors over real MCP HTTP. | Eyeballing demo output. |
-| 2026-10-15 | Project name isolated behind `scripts/rename.py` | Name is undecided (`mcpify` is taken on PyPI and GitHub). Tested: rename then pytest stays green. | Hand renaming later. |
+| 2026-10-15 | Project name isolated behind `scripts/rename.py` | Name is undecided (`agentifyapi` is taken on PyPI and GitHub). Tested: rename then pytest stays green. | Hand renaming later. |
 | 2026-10-15 | Crawler only calls the describer when the contract hash changed | Removed a redundant second `propose` path. Unchanged crawls cost zero LLM calls. | Re-describe every crawl. |
 | 2026-10-15 | Protobuf/gRPC is a typed config field (`proto:`) that raises `NotImplementedError` | The extension point is visible without shipping half a feature. | Omit it entirely. |

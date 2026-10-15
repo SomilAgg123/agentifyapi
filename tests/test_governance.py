@@ -1,5 +1,5 @@
-from mcpify.config import PolicyConfig
-from mcpify.governance import is_allowed, project, redact, redact_text, resolve_caller
+from agentifyapi.config import PolicyConfig
+from agentifyapi.governance import is_allowed, project, redact, redact_text, resolve_caller
 
 POLICY = PolicyConfig.model_validate({
     "api_keys": {"k1": {"name": "support", "roles": ["support"]}, "k2": {"name": "bi", "roles": ["readonly"]}},

@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-OLD = "mcpify"
+OLD = "agentifyapi"
 
 
 def main(new: str) -> None:

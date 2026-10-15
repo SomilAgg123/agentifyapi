@@ -5,3 +5,4 @@ __pycache__/
 audit.log
 .pytest_cache/
 dist/
+.ruff_cache/

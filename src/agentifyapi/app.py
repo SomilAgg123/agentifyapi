@@ -27,7 +27,7 @@ def create_app(settings: Settings | str | None = None, registry: Registry | None
         if task:
             task.cancel()
 
-    app = FastAPI(title="mcpify gateway", lifespan=lifespan)
+    app = FastAPI(title="agentifyapi gateway", lifespan=lifespan)
     app.state.gateway, app.state.registry = gw, reg
     app.router.routes.extend(gw.routes())
     app.include_router(admin_router(reg, gw.audit), prefix="/admin")

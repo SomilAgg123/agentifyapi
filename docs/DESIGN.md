@@ -14,7 +14,7 @@ build schemas from `app.openapi()` so Pydantic → JSON Schema is exactly FastAP
 OpenAPI is the fallback and covers non-FastAPI services.
 
 ## 2. Two shapes, one core
-`mount(app)` (embedded, in-process ASGI dispatch) for one service and `mcpify serve` (standalone)
+`mount(app)` (embedded, in-process ASGI dispatch) for one service and `agentifyapi serve` (standalone)
 for many. Both use the same Registry and Gateway classes.
 
 ## 3. Discovery doesn't imply exposure

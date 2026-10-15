@@ -10,7 +10,7 @@ from .config import ServiceConfig, load_settings
 from .crawler import crawl_all, crawl_service
 from .registry import Registry, RegistryError
 
-PROG = "mcpify"
+PROG = "agentifyapi"
 
 
 def _registry(args) -> Registry:

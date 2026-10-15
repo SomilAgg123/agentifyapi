@@ -96,7 +96,7 @@ def operation_to_tool(server: str, method: str, path: str, operation: dict, spec
         "summary": op.get("summary", ""),
         "doc": op.get("description", ""),
         "tags": op.get("tags", []),
-        "dependencies": op.get("x-mcpify-dependencies", []),
+        "dependencies": op.get("x-agentifyapi-dependencies", []),
         "deprecated": bool(op.get("deprecated")),
     }
 
@@ -107,7 +107,7 @@ def spec_to_tools(server: str, spec: dict, names: dict[tuple[str, str], str] | N
         for method in HTTP_METHODS:
             if method in item:
                 op = item[method]
-                if op.get("x-mcpify-exclude"):
+                if op.get("x-agentifyapi-exclude"):
                     continue
                 tools.append(operation_to_tool(server, method, path, op, spec,
                                                (names or {}).get((method.upper(), path))))

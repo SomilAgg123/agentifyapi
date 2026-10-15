@@ -6,7 +6,7 @@ import time
 import pytest
 import uvicorn
 
-os.environ["MCPIFY_DESCRIBER"] = "template"  # deterministic, no network
+os.environ["AGENTIFYAPI_DESCRIBER"] = "template"  # deterministic, no network
 
 
 def free_port() -> int:
@@ -41,5 +41,5 @@ def serve():
 
 @pytest.fixture
 def registry(tmp_path):
-    from mcpify.registry import Registry
+    from agentifyapi.registry import Registry
     return Registry(str(tmp_path / "r.db"))

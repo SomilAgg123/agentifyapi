@@ -1,5 +1,5 @@
-from mcpify.introspect import import_app, introspect_app
-from mcpify.schema import spec_to_tools
+from agentifyapi.introspect import import_app, introspect_app
+from agentifyapi.schema import spec_to_tools
 
 
 def test_fastapi_native_introspection():

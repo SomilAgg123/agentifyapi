@@ -1,13 +1,13 @@
 """Embed mode: add a governed MCP endpoint to an existing FastAPI app.
 
-    from mcpify import mount
+    from agentifyapi import mount
     app = FastAPI()
     ...routes...
     mount(app)          # -> /mcp, /servers/<name>/mcp, /mcp-admin
 
 Routes are introspected in-process at startup and calls are dispatched in-process
 (ASGI transport), so no network hop and no separate deployment. Tools still start
-disabled: approve/enable them with the CLI (`mcpify --db <path> tools ...`) or /mcp-admin.
+disabled: approve/enable them with the CLI (`agentifyapi --db <path> tools ...`) or /mcp-admin.
 """
 from __future__ import annotations
 
@@ -23,10 +23,10 @@ from .gateway import Gateway
 from .registry import Registry
 
 
-def mount(app: FastAPI, *, name: str | None = None, owner: str | None = None, database: str = "mcpify.db",
+def mount(app: FastAPI, *, name: str | None = None, owner: str | None = None, database: str = "agentifyapi.db",
           policy: PolicyConfig | None = None, prefix: str = "", admin_path: str | None = "/mcp-admin",
           auto_approve: bool = False, redact_pii: bool = True, audit_log: str | None = "audit.log") -> Gateway:
-    """Attach mcpify to `app`. `auto_approve=True` is for local development only."""
+    """Attach agentifyapi to `app`. `auto_approve=True` is for local development only."""
     server_name = name or (app.title or "app").lower().replace(" ", "_")
     settings = Settings(database=database, audit_log=audit_log or "", redact_pii=redact_pii,
                         policy=policy or PolicyConfig(),
@@ -54,5 +54,5 @@ def mount(app: FastAPI, *, name: str | None = None, owner: str | None = None, da
             yield state
 
     app.router.lifespan_context = lifespan
-    app.state.mcpify = gw
+    app.state.agentifyapi = gw
     return gw

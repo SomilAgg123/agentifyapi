@@ -5,10 +5,10 @@ from fastapi import FastAPI
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client  # noqa: F401 (stable across 1.x)
 
-from mcpify import create_app, mount
-from mcpify.config import PolicyConfig, ServiceConfig, Settings
-from mcpify.crawler import crawl_all
-from mcpify.registry import Registry
+from agentifyapi import create_app, mount
+from agentifyapi.config import PolicyConfig, ServiceConfig, Settings
+from agentifyapi.crawler import crawl_all
+from agentifyapi.registry import Registry
 
 
 async def _session_call(url, key, calls):

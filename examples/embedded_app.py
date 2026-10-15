@@ -1,12 +1,12 @@
 """Embed mode: one line adds a governed /mcp endpoint to an existing FastAPI app.
 
     uvicorn examples.embedded_app:app --port 8200
-    mcpify --db embedded.db tools list            # review, then approve + enable
+    agentifyapi --db embedded.db tools list            # review, then approve + enable
 """
 from fastapi import FastAPI
 
-from mcpify import mount
-from mcpify.config import PolicyConfig
+from agentifyapi import mount
+from agentifyapi.config import PolicyConfig
 
 app = FastAPI(title="inventory")
 

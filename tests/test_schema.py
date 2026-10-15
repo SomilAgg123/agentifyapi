@@ -1,4 +1,4 @@
-from mcpify.schema import definition_hash, resolve_refs, spec_to_tools, tool_slug
+from agentifyapi.schema import definition_hash, resolve_refs, spec_to_tools, tool_slug
 
 SPEC = {
     "openapi": "3.1.0",

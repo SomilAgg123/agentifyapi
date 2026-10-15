@@ -12,7 +12,7 @@ from .introspect import import_app, introspect_app
 from .registry import Registry
 from .schema import definition_hash, spec_to_tools
 
-log = logging.getLogger("mcpify.crawler")
+log = logging.getLogger("agentifyapi.crawler")
 
 
 def fetch_spec(svc: ServiceConfig, app=None) -> tuple[dict, dict, str]:

@@ -56,7 +56,7 @@ def create_order(order: NewOrder) -> Order:
     return ORDERS[oid]
 
 
-@app.post("/orders/{order_id}/refund", tags=["orders"], openapi_extra={"x-mcpify-exclude": True})
+@app.post("/orders/{order_id}/refund", tags=["orders"], openapi_extra={"x-agentifyapi-exclude": True})
 def refund_order(order_id: int) -> dict:
-    """Internal-only: excluded from MCP via openapi_extra={'x-mcpify-exclude': True}."""
+    """Internal-only: excluded from MCP via openapi_extra={'x-agentifyapi-exclude': True}."""
     return {"refunded": order_id}

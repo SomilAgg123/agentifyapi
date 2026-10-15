@@ -35,8 +35,8 @@ def revision_diff(reg: Registry, tool: str, version: int | None = None) -> str:
 
 
 def _page(body: str) -> HTMLResponse:
-    return HTMLResponse(f"<!doctype html><title>mcpify admin</title><style>{CSS}</style>"
-                        f"<h1>mcpify &middot; tool registry</h1>{body}")
+    return HTMLResponse(f"<!doctype html><title>agentifyapi admin</title><style>{CSS}</style>"
+                        f"<h1>agentifyapi &middot; tool registry</h1>{body}")
 
 
 def admin_router(reg: Registry, audit=None) -> APIRouter:
