@@ -7,6 +7,18 @@
 
 **Make your FastAPI services agent-ready with owner-approved MCP tools.**
 
+## Install
+
+```bash
+pip install agentifyapi
+```
+
+Python 3.11 or newer. If the release is not on PyPI yet:
+
+```bash
+pip install "git+https://github.com/SomilAgg123/agentifyapi"
+```
+
 ## Example
 
 A tiny FastAPI app. One `mount(app)` call adds a governed `/mcp` endpoint. Routes become MCP tools,
@@ -57,17 +69,17 @@ For many services behind one gateway, see [Standalone gateway demo](#standalone-
 Use them if you want every selected route live immediately. agentifyapi converts routes too, but its focus
 is what happens *around* the tools when many teams' APIs are involved.
 
-| | agentifyapi |
-|---|---|
-| Approval | New and changed tools wait in a pending state until an owner approves and enables them. |
-| Change control | Each tool has versioned revisions with a reviewable diff and one-command rollback. |
-| Policy | Per-caller and per-role allow-lists by API key, default deny. |
-| Data protection | PII redaction (emails, phones, SSNs, Luhn-checked cards) and response projection. |
-| Audit | A JSON-lines record of every call: caller, decision, status, redaction count. |
-| Discovery at scale | Four meta-tools (`discover_servers`, `list_tools`, `get_tool_schema`, `invoke_tool`) instead of one huge tool list. |
+| | agentifyapi | fastapi_mcp | FastMCP |
+|---|---|---|---|
+| Approval | New and changed tools wait in a pending state until an owner approves and enables them. | Selected routes are live on mount. | Selected routes are live on convert. |
+| Change control | Each tool has versioned revisions with a reviewable diff and one-command rollback. | — | — |
+| Policy | Per-caller and per-role allow-lists by API key, default deny. | FastAPI dependencies and OAuth on the MCP endpoint. | OAuth, JWT, and other auth providers. |
+| Data protection | PII redaction (emails, phones, SSNs, Luhn-checked cards) and response projection. | — | — |
+| Audit | A JSON-lines record of every call: caller, decision, status, redaction count. | — | Middleware you add. |
+| Discovery at scale | Four meta-tools (`discover_servers`, `list_tools`, `get_tool_schema`, `invoke_tool`) instead of one huge tool list. | One flat tool list. | One flat tool list; routes can also be resources. |
 
-The other projects have strengths this one doesn't, such as broader MCP feature coverage and
-richer authentication. agentifyapi is young (0.x).
+A dash means that control is not built in. The other projects have strengths this one doesn't,
+such as broader MCP feature coverage and richer authentication. agentifyapi is young (0.x).
 
 
 > Inspired by Uber's [Designing MCP Gateway](https://www.uber.com/blog/designing-mcp-gateway/), rebuilt as a small
