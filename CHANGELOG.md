@@ -8,7 +8,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ### Added
 
-- README install section (`pip install agentifyapi`, with a git fallback) and a three-column
+- README install section (`pip install agentifyapi`, plus the latest commit on main) and a three-column
   comparison with fastapi_mcp and FastMCP.
 - README front-and-center example (`examples/quickstart.py`) with `scripts/verify_quickstart.py` in CI.
 - Packaging metadata, `py.typed`, and versions computed from git tags (hatch-vcs).
