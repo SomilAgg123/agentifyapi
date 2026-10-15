@@ -9,6 +9,7 @@ Routes are introspected in-process at startup and calls are dispatched in-proces
 (ASGI transport), so no network hop and no separate deployment. Tools still start
 disabled: approve/enable them with the CLI (`agentifyapi --db <path> tools ...`) or /mcp-admin.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -23,14 +24,28 @@ from .gateway import Gateway
 from .registry import Registry
 
 
-def mount(app: FastAPI, *, name: str | None = None, owner: str | None = None, database: str = "agentifyapi.db",
-          policy: PolicyConfig | None = None, prefix: str = "", admin_path: str | None = "/mcp-admin",
-          auto_approve: bool = False, redact_pii: bool = True, audit_log: str | None = "audit.log") -> Gateway:
+def mount(
+    app: FastAPI,
+    *,
+    name: str | None = None,
+    owner: str | None = None,
+    database: str = "agentifyapi.db",
+    policy: PolicyConfig | None = None,
+    prefix: str = "",
+    admin_path: str | None = "/mcp-admin",
+    auto_approve: bool = False,
+    redact_pii: bool = True,
+    audit_log: str | None = "audit.log",
+) -> Gateway:
     """Attach agentifyapi to `app`. `auto_approve=True` is for local development only."""
     server_name = name or (app.title or "app").lower().replace(" ", "_")
-    settings = Settings(database=database, audit_log=audit_log or "", redact_pii=redact_pii,
-                        policy=policy or PolicyConfig(),
-                        services=[ServiceConfig(name=server_name, owner=owner)])
+    settings = Settings(
+        database=database,
+        audit_log=audit_log or "",
+        redact_pii=redact_pii,
+        policy=policy or PolicyConfig(),
+        services=[ServiceConfig(name=server_name, owner=owner)],
+    )
     reg = Registry(database)
     gw = Gateway(reg, settings)
     gw.transports[server_name] = httpx.ASGITransport(app=app)
@@ -53,6 +68,6 @@ def mount(app: FastAPI, *, name: str | None = None, owner: str | None = None, da
         async with original(a) as state, gw.lifespan():
             yield state
 
-    app.router.lifespan_context = lifespan
+    app.router.lifespan_context = lifespan  # pyright: ignore[reportAttributeAccessIssue]  # Starlette allows this
     app.state.agentifyapi = gw
     return gw

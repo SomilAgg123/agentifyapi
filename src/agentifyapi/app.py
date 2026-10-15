@@ -1,4 +1,5 @@
 """Standalone gateway app: many services -> one governed MCP endpoint + admin UI."""
+
 from __future__ import annotations
 
 import asyncio

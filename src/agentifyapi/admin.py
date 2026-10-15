@@ -1,4 +1,5 @@
 """Minimal admin UI (server-rendered HTML, no JS build) for reviewing revisions."""
+
 from __future__ import annotations
 
 import difflib
@@ -35,8 +36,10 @@ def revision_diff(reg: Registry, tool: str, version: int | None = None) -> str:
 
 
 def _page(body: str) -> HTMLResponse:
-    return HTMLResponse(f"<!doctype html><title>agentifyapi admin</title><style>{CSS}</style>"
-                        f"<h1>agentifyapi &middot; tool registry</h1>{body}")
+    return HTMLResponse(
+        f"<!doctype html><title>agentifyapi admin</title><style>{CSS}</style>"
+        f"<h1>agentifyapi &middot; tool registry</h1>{body}"
+    )
 
 
 def admin_router(reg: Registry, audit=None) -> APIRouter:
@@ -50,14 +53,23 @@ def admin_router(reg: Registry, audit=None) -> APIRouter:
             n = html.escape(t["name"])
             state = '<span class="on">enabled</span>' if t["enabled"] else '<span class="off">disabled</span>'
             pend = f'<span class="pend">{t["pending"]} pending</span>' if t["pending"] else ""
-            rows.append(f'<tr><td><a href="tools/{n}">{n}</a></td><td>{html.escape(owners.get(t["server"], "-"))}'
-                        f'</td><td>v{t["current_version"] or "-"}</td><td>{state}</td><td>{pend}</td></tr>')
+            rows.append(
+                f'<tr><td><a href="tools/{n}">{n}</a></td><td>{html.escape(owners.get(t["server"], "-"))}'
+                f"</td><td>v{t['current_version'] or '-'}</td><td>{state}</td><td>{pend}</td></tr>"
+            )
         audit_html = ""
         if audit is not None and audit.records:
-            audit_html = "<h2>Recent calls</h2><pre>" + html.escape(
-                "\n".join(json.dumps(e) for e in audit.records[-20:])) + "</pre>"
-        return _page("<table><tr><th>Tool</th><th>Owner</th><th>Live</th><th>State</th><th></th></tr>"
-                     + "".join(rows) + "</table>" + audit_html)
+            audit_html = (
+                "<h2>Recent calls</h2><pre>"
+                + html.escape("\n".join(json.dumps(e) for e in audit.records[-20:]))
+                + "</pre>"
+            )
+        return _page(
+            "<table><tr><th>Tool</th><th>Owner</th><th>Live</th><th>State</th><th></th></tr>"
+            + "".join(rows)
+            + "</table>"
+            + audit_html
+        )
 
     @r.get("/tools/{tool}", response_class=HTMLResponse)
     def tool_page(tool: str):
@@ -67,25 +79,42 @@ def admin_router(reg: Registry, audit=None) -> APIRouter:
             raise HTTPException(404, str(e)) from e
         row = next(t for t in reg.tools() if t["name"] == tool)
         revs = reg.revisions(tool)
-        hist = "".join(f"<tr><td>v{x['version']}</td><td>{x['status']}</td><td>{x['spec_hash']}</td>"
-                       f"<td>{html.escape(x['decided_by'] or '')}</td></tr>" for x in revs)
+        hist = "".join(
+            f"<tr><td>v{x['version']}</td><td>{x['status']}</td><td>{x['spec_hash']}</td>"
+            f"<td>{html.escape(x['decided_by'] or '')}</td></tr>"
+            for x in revs
+        )
         diff_html = "\n".join(
-            f'<span class="{"add" if l.startswith("+") else "del" if l.startswith("-") else ""}">{html.escape(l)}</span>'
-            for l in diff.splitlines())
+            f'<span class="{"add" if line.startswith("+") else "del" if line.startswith("-") else ""}">{html.escape(line)}</span>'
+            for line in diff.splitlines()
+        )
         t = html.escape(tool)
-        btn = lambda action, label: (f'<form method="post" action="{t}/{action}"><button>{label}</button></form>')
-        actions = (btn("approve", "Approve pending") + btn("reject", "Reject pending") +
-                   (btn("disable", "Disable") if row["enabled"] else btn("enable", "Enable")) + btn("rollback", "Rollback"))
-        return _page(f'<p><a href="../">&larr; all tools</a></p><h2>{t}</h2>{actions}'
-                     f"<h3>Diff (live &rarr; latest proposed)</h3><pre>{diff_html or '(no changes)'}</pre>"
-                     f"<h3>History</h3><table><tr><th>Version</th><th>Status</th><th>Hash</th><th>By</th></tr>{hist}</table>")
+
+        def btn(action, label):
+            return f'<form method="post" action="{t}/{action}"><button>{label}</button></form>'
+
+        actions = (
+            btn("approve", "Approve pending")
+            + btn("reject", "Reject pending")
+            + (btn("disable", "Disable") if row["enabled"] else btn("enable", "Enable"))
+            + btn("rollback", "Rollback")
+        )
+        return _page(
+            f'<p><a href="../">&larr; all tools</a></p><h2>{t}</h2>{actions}'
+            f"<h3>Diff (live &rarr; latest proposed)</h3><pre>{diff_html or '(no changes)'}</pre>"
+            f"<h3>History</h3><table><tr><th>Version</th><th>Status</th><th>Hash</th><th>By</th></tr>{hist}</table>"
+        )
 
     @r.post("/tools/{tool}/{action}")
     def act(tool: str, action: str, by: str = Form("admin-ui")):
         try:
-            {"approve": lambda: reg.approve(tool, by), "reject": lambda: reg.reject(tool, by),
-             "enable": lambda: reg.set_enabled(tool, True), "disable": lambda: reg.set_enabled(tool, False),
-             "rollback": lambda: reg.rollback(tool)}[action]()
+            {
+                "approve": lambda: reg.approve(tool, by),
+                "reject": lambda: reg.reject(tool, by),
+                "enable": lambda: reg.set_enabled(tool, True),
+                "disable": lambda: reg.set_enabled(tool, False),
+                "rollback": lambda: reg.rollback(tool),
+            }[action]()
         except KeyError:
             raise HTTPException(404, "unknown action") from None
         except RegistryError as e:

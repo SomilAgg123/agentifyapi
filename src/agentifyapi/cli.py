@@ -1,4 +1,5 @@
 """Command line: crawl, review, approve, serve."""
+
 from __future__ import annotations
 
 import argparse
@@ -23,8 +24,9 @@ def cmd_crawl(args) -> int:
     reg = Registry(args.db or settings.database)
     if args.app or args.url:
         name = args.name or (args.app.split(":")[0].split(".")[0] if args.app else "service")
-        svc = ServiceConfig(name=name, owner=args.owner, app=args.app, app_dir=args.app_dir,
-                            base_url=args.base_url or args.url)
+        svc = ServiceConfig(
+            name=name, owner=args.owner, app=args.app, app_dir=args.app_dir, base_url=args.base_url or args.url
+        )
         report = {name: crawl_service(reg, svc)}
     else:
         report = crawl_all(reg, settings, args.service)
@@ -48,8 +50,10 @@ def cmd_tools(args) -> int:
                 return 0
             print(f"{'TOOL':40} {'LIVE':5} {'STATE':9} PENDING")
             for t in rows:
-                print(f"{t['name']:40} {('v' + str(t['current_version'])) if t['current_version'] else '-':5} "
-                      f"{'enabled' if t['enabled'] else 'disabled':9} {t['pending'] or ''}")
+                print(
+                    f"{t['name']:40} {('v' + str(t['current_version'])) if t['current_version'] else '-':5} "
+                    f"{'enabled' if t['enabled'] else 'disabled':9} {t['pending'] or ''}"
+                )
             return 0
         if not args.target:
             print("tool name required", file=sys.stderr)
@@ -81,6 +85,7 @@ def cmd_serve(args) -> int:
     import uvicorn
 
     from .app import create_app
+
     settings = load_settings(args.config)
     if args.db:
         settings.database = args.db

@@ -1,4 +1,5 @@
 """Mock users service (contains PII, to show redaction)."""
+
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 

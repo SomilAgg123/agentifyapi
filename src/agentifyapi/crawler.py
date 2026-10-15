@@ -1,4 +1,5 @@
 """Crawler: fetch specs (FastAPI import or HTTP), translate, propose revisions."""
+
 from __future__ import annotations
 
 import asyncio

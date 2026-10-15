@@ -1,4 +1,5 @@
 """Rename the project everywhere: `python scripts/rename.py <new_name>` (package, CLI, env vars, docs)."""
+
 import re
 import subprocess
 import sys
