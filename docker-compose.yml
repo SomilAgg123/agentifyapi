@@ -1,0 +1,23 @@
+services:
+  orders:
+    build: .
+    command: uvicorn examples.services.orders:app --host 0.0.0.0 --port 8101
+  users:
+    build: .
+    command: uvicorn examples.services.users:app --host 0.0.0.0 --port 8102
+  gateway:
+    build: .
+    depends_on: [orders, users]
+    ports: ["8000:8000"]
+    environment: { MCPIFY_DESCRIBER: template }
+    command: >
+      sh -c "sleep 3 &&
+      sed -e 's#127.0.0.1:8101#orders:8101#' -e 's#127.0.0.1:8102#users:8102#' examples/mcpify.yaml > /tmp/c.yaml &&
+      mcpify -c /tmp/c.yaml crawl &&
+      for t in orders.get_order orders.list_orders users.get_user; do mcpify -c /tmp/c.yaml tools approve $$t --by compose && mcpify -c /tmp/c.yaml tools enable $$t; done &&
+      mcpify -c /tmp/c.yaml serve --host 0.0.0.0 --port 8000"
+  agent:
+    build: .
+    depends_on: [gateway]
+    environment: { MCPIFY_URL: "http://gateway:8000/mcp" }
+    command: sh -c "sleep 8 && python examples/agent_client.py"

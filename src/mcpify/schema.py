@@ -38,7 +38,7 @@ def tool_slug(operation: dict, method: str, path: str) -> str:
     strip the generated `<path>_<method>` suffix to recover the route function name."""
     op_id = operation.get("operationId")
     if op_id:
-        suffix = "_" + re.sub(r"\W", "_", path) + "_" + method
+        suffix = re.sub(r"\W", "_", path) + "_" + method
         if op_id.endswith(suffix) and len(op_id) > len(suffix):
             op_id = op_id[: -len(suffix)]
         return re.sub(r"[^a-zA-Z0-9_]", "_", op_id).strip("_")

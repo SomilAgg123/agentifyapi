@@ -1,0 +1,26 @@
+database: demo.db
+audit_log: audit.log
+crawl_interval_seconds: 0      # set e.g. 300 to re-crawl every 5 minutes
+redact_pii: true
+
+services:
+  # FastAPI-native: import the app object and introspect routes/models/docstrings.
+  - name: orders
+    owner: team-commerce
+    app: examples.services.orders:app
+    base_url: http://127.0.0.1:8101          # where calls are forwarded
+  # HTTP fallback: read /openapi.json from a running service.
+  - name: users
+    owner: team-identity
+    base_url: http://127.0.0.1:8102
+
+policy:
+  allow_anonymous: false
+  api_keys:
+    demo-support-key: { name: support-agent, roles: [support] }
+    demo-readonly-key: { name: analytics-agent, roles: [readonly] }
+  rules:
+    - tools: ["orders.*", "users.*"]
+      roles: [support]
+    - tools: ["orders.get_order", "orders.list_orders"]
+      roles: [readonly]
