@@ -13,7 +13,9 @@
 pip install agentifyapi
 ```
 
-Python 3.11 or newer. If the release is not on PyPI yet:
+Python 3.11 or newer.
+
+For the latest commit on main:
 
 ```bash
 pip install "git+https://github.com/SomilAgg123/agentifyapi"
