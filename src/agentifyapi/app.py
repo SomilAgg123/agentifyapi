@@ -31,7 +31,7 @@ def create_app(settings: Settings | str | None = None, registry: Registry | None
     app = FastAPI(title="agentifyapi gateway", lifespan=lifespan)
     app.state.gateway, app.state.registry = gw, reg
     app.router.routes.extend(gw.routes())
-    app.include_router(admin_router(reg, gw.audit), prefix="/admin")
+    app.include_router(admin_router(reg, gw.audit, settings.admin), prefix="/admin")
 
     @app.get("/healthz")
     def healthz():

@@ -136,7 +136,7 @@ gateway on `:8000`, and runs `examples/agent_client.py`, an MCP SDK client that 
 ```
 
 `python scripts/run_demo.py --keep` leaves it running so you can open the admin UI at
-<http://127.0.0.1:8000/admin/>. With Docker, run `make demo-docker`.
+<http://127.0.0.1:8000/admin/>. With Docker, run `make demo-docker` (admin UI login `admin` / `demo`).
 
 `make verify` boots the same demo and checks 8 behaviors against it over real MCP HTTP: discovery,
 approval gating, projection, redaction, policy denial, the per-server endpoint, the admin UI, and the audit log.
@@ -199,15 +199,22 @@ policy:
     - tools: ["orders.*"]      # fnmatch on tool names
       roles: [support]
       callers: [some-agent]
+
+admin:                         # admin UI (/admin, /mcp-admin) access
+  username: admin
+  password: null               # set to require HTTP Basic auth; null = localhost-only
+  insecure_allow_remote: false # dev only: no password and reachable from anywhere
 ```
 
 | Env var | Effect |
 |---|---|
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | LLM-written tool descriptions (`AGENTIFYAPI_LLM_MODEL` picks the model) |
 | `AGENTIFYAPI_DESCRIBER=template` | Force the deterministic template describer |
+| `AGENTIFYAPI_ADMIN_PASSWORD` / `AGENTIFYAPI_ADMIN_USERNAME` | Require HTTP Basic auth for the admin UI (username defaults to `admin`); overrides config |
 
-`mount(app, name=, owner=, database=, policy=, prefix=, admin_path=, auto_approve=False, redact_pii=True, audit_log=)`.
-`auto_approve=True` is for local development only.
+`mount(app, name=, owner=, database=, policy=, prefix=, admin_path=, auto_approve=False, redact_pii=True, audit_log=, admin_password=None, admin_username="admin", admin_allow_remote=False)`.
+`auto_approve=True` is for local development only. Without an admin password the admin UI only
+answers localhost; see [SECURITY.md](SECURITY.md).
 
 ## Development
 

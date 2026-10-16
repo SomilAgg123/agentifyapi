@@ -2,14 +2,22 @@
 
 from __future__ import annotations
 
+import base64
 import difflib
 import html
+import ipaddress
 import json
+import os
+import secrets
 
-from fastapi import APIRouter, Form, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from .config import AdminConfig
 from .registry import Registry, RegistryError
+
+ADMIN_PASSWORD_ENV = "AGENTIFYAPI_ADMIN_PASSWORD"
+ADMIN_USERNAME_ENV = "AGENTIFYAPI_ADMIN_USERNAME"
 
 CSS = """body{font:14px system-ui;margin:2rem;max-width:1100px;color:#1d2433}
 table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #e3e6ec;padding:6px;text-align:left}
@@ -42,8 +50,52 @@ def _page(body: str) -> HTMLResponse:
     )
 
 
-def admin_router(reg: Registry, audit=None) -> APIRouter:
-    r = APIRouter()
+def _is_loopback(host: str | None) -> bool:
+    if not host:
+        return False
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return host == "localhost"
+
+
+def admin_guard(cfg: AdminConfig | None = None):
+    """FastAPI dependency enforcing `AdminConfig` (env vars override the config's credentials)."""
+    cfg = cfg or AdminConfig()
+    password = os.getenv(ADMIN_PASSWORD_ENV) or cfg.password
+    username = os.getenv(ADMIN_USERNAME_ENV) or cfg.username
+
+    def guard(request: Request) -> None:
+        if password:
+            auth = request.headers.get("authorization", "")
+            scheme, _, value = auth.partition(" ")
+            ok = False
+            if scheme.lower() == "basic" and value:
+                try:
+                    user, _, pw = base64.b64decode(value).decode().partition(":")
+                except (ValueError, UnicodeDecodeError):
+                    user, pw = "", ""
+                ok = secrets.compare_digest(user.encode(), username.encode()) & secrets.compare_digest(
+                    pw.encode(), password.encode()
+                )
+            if not ok:
+                raise HTTPException(
+                    401, "admin authentication required", headers={"WWW-Authenticate": 'Basic realm="agentifyapi"'}
+                )
+            return
+        if cfg.insecure_allow_remote:
+            return
+        if not _is_loopback(request.client.host if request.client else None):
+            raise HTTPException(
+                403,
+                f"admin UI is restricted to localhost; set {ADMIN_PASSWORD_ENV} (or admin.password) to allow remote access",
+            )
+
+    return guard
+
+
+def admin_router(reg: Registry, audit=None, admin: AdminConfig | None = None) -> APIRouter:
+    r = APIRouter(dependencies=[Depends(admin_guard(admin))])
 
     @r.get("/", response_class=HTMLResponse)
     def index():

@@ -39,6 +39,19 @@ class PolicyConfig(BaseModel):
     rules: list[PolicyRule] = Field(default_factory=list)
 
 
+class AdminConfig(BaseModel):
+    """Access control for the admin UI (`/admin` standalone, `/mcp-admin` embedded).
+
+    * `password` set (or env `AGENTIFYAPI_ADMIN_PASSWORD`): HTTP Basic auth is required.
+    * no password: the UI only answers clients on a loopback address (127.0.0.1 / ::1).
+    * `insecure_allow_remote: true` with no password: anyone can reach it (dev only).
+    """
+
+    username: str = "admin"
+    password: str | None = None
+    insecure_allow_remote: bool = False
+
+
 class Settings(BaseModel):
     database: str = "registry.db"
     audit_log: str = "audit.log"
@@ -46,6 +59,7 @@ class Settings(BaseModel):
     redact_pii: bool = True
     services: list[ServiceConfig] = Field(default_factory=list)
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
+    admin: AdminConfig = Field(default_factory=AdminConfig)
 
 
 def load_settings(path: str | Path | None) -> Settings:

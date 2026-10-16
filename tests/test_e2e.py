@@ -149,3 +149,68 @@ async def test_embed_mount(tmp_path, serve):
         )
         assert json.loads(res[1][1])[0]["tool"] == "inventory.get_stock"
         assert json.loads(res[2][1]) == {"sku": "A-1", "on_hand": 3, "contact": "[REDACTED:email]"}
+
+
+async def test_embed_path_param_with_slash(tmp_path, serve):
+    app = FastAPI(title="inventory")
+
+    @app.get("/stock/{sku}")
+    def get_stock(sku: str) -> dict:
+        """Units on hand for a SKU."""
+        return {"sku": sku, "on_hand": 3}
+
+    mount(
+        app,
+        database=str(tmp_path / "s.db"),
+        audit_log=None,
+        auto_approve=True,
+        admin_path=None,
+        policy=PolicyConfig(allow_anonymous=True),
+    )
+    with serve(app) as url:
+        res = await _session_call(
+            f"{url}/mcp",
+            None,
+            [("invoke_tool", {"tool": "inventory.get_stock", "args": {"sku": "A/1 b?c"}})],
+        )
+        assert res[1][0] is False, res[1][1]
+        assert json.loads(res[1][1]) == {"sku": "A/1 b?c", "on_hand": 3}
+
+
+async def test_http_forwarding_encodes_path_params(tmp_path, monkeypatch):
+    import httpx
+
+    from agentifyapi.gateway import Gateway
+
+    reg = Registry(str(tmp_path / "h.db"))
+    app = FastAPI(title="inv")
+
+    @app.get("/stock/{sku}")
+    def get_stock(sku: str) -> dict:
+        return {"sku": sku}
+
+    from agentifyapi.crawler import crawl_service
+
+    crawl_service(reg, ServiceConfig(name="inv", base_url="http://inv.local"), app=app)
+    reg.approve("inv.get_stock", by="t")
+    reg.set_enabled("inv.get_stock", True)
+    seen = []
+    gw = Gateway(reg, Settings(audit_log="", policy=PolicyConfig(allow_anonymous=True)))
+    gw.transports.pop("inv", None)
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(req.url.raw_path)
+        return httpx.Response(200, json={"ok": True})
+
+    orig = httpx.AsyncClient
+
+    class Patched(orig):
+        def __init__(self, *a, **kw):
+            kw["transport"] = httpx.MockTransport(handler)
+            super().__init__(*a, **kw)
+
+    import agentifyapi.gateway as gmod
+
+    monkeypatch.setattr(gmod.httpx, "AsyncClient", Patched)
+    await gw.invoke("inv.get_stock", {"sku": "A/1 b?c"}, None, None)
+    assert seen == [b"/stock/A%2F1%20b%3Fc"]

@@ -9,7 +9,7 @@ services:
     build: .
     depends_on: [orders, users]
     ports: ["8000:8000"]
-    environment: { AGENTIFYAPI_DESCRIBER: template }
+    environment: { AGENTIFYAPI_DESCRIBER: template, AGENTIFYAPI_ADMIN_PASSWORD: demo }  # admin UI: admin / demo
     command: >
       sh -c "sleep 3 &&
       sed -e 's#127.0.0.1:8101#orders:8101#' -e 's#127.0.0.1:8102#users:8102#' examples/agentifyapi.yaml > /tmp/c.yaml &&
