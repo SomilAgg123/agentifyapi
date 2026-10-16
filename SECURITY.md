@@ -29,6 +29,19 @@ crawler. The demo services under `examples/` are intentionally insecure mock dat
 ## Defaults worth knowing
 
 Tools are disabled until an owner approves and enables them. Callers are denied unless a policy
-rule matches (unless `allow_anonymous: true`, which is for local development only). The admin UI
-has no authentication of its own in this version, so don't expose `/admin` or `/mcp-admin` on a
-public network.
+rule matches (unless `allow_anonymous: true`, which is for local development only). 
+
+The admin UI (`/admin` standalone, `/mcp-admin` embedded) can approve and enable tools, so it is
+gated separately from the MCP endpoint:
+
+* **No password configured (default):** the admin UI only answers clients connecting from a loopback
+  address (`127.0.0.1` / `::1`). Everyone else gets `403`.
+* **Password configured:** HTTP Basic auth is required for every admin request, including from
+  localhost. Set `AGENTIFYAPI_ADMIN_PASSWORD` (and optionally `AGENTIFYAPI_ADMIN_USERNAME`, default
+  `admin`), `admin.password` in YAML, or `mount(app, admin_password=...)`. The env var wins.
+* **`insecure_allow_remote: true` / `mount(..., admin_allow_remote=True)`** with no password opens the
+  UI to anyone. Development only.
+
+Behind a reverse proxy every request may appear to come from loopback, so set a password there. Basic
+auth sends the password with each request; serve the admin UI over HTTPS. The admin gate does not
+change the MCP endpoint's API-key policy.

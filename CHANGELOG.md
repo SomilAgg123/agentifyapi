@@ -8,6 +8,10 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ### Added
 
+- Admin UI access control (#4). With no password the admin UI (`/admin`, `/mcp-admin`) only answers
+  loopback clients; set `AGENTIFYAPI_ADMIN_PASSWORD`, `admin.password`, or
+  `mount(app, admin_password=...)` to require HTTP Basic auth. `admin.insecure_allow_remote` /
+  `admin_allow_remote=True` opens it without a password for development.
 - README PyPI and Python-version badges use distinct shields.io URLs so GitHub fetches the live
   `agentifyapi` 0.1.0 images.
 - README install section (`pip install agentifyapi`, plus the latest commit on main) and a three-column
@@ -18,6 +22,16 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   a job that runs the demo verification, and a zizmor workflow audit.
 - A release workflow that publishes to PyPI with trusted publishing when a GitHub release is published.
 - Pre-commit hooks (ruff, pyproject validation, gitleaks), Dependabot, issue forms, and a PR template.
+
+### Fixed
+
+- Path parameters containing `/` (e.g. sku `A/1`) no longer 404 in embedded `mount()` mode (#5).
+  Values are percent-encoded when forwarded, and in-process dispatch routes on the encoded segment.
+
+### Changed
+
+- The admin UI is no longer reachable from non-localhost clients unless a password is configured
+  (or `insecure_allow_remote` is set).
 
 ## [0.1.0] - 2026-10-15
 
