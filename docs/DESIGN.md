@@ -50,7 +50,7 @@ only scans what is returned. The audit log records argument *keys*, not values, 
 
 ## 9. Policy: default deny, API keys → caller + roles
 Allow-list rules with fnmatch patterns on tool names. `allow_anonymous` exists only for local
-development. OAuth / end-user identity passthrough is on the roadmap.
+development. Discovery applies the same rules: a caller only sees the tools it may invoke. OAuth / end-user identity passthrough is on the roadmap.
 
 ## 10. Redaction is regex + Luhn
 Emails, SSNs, phone numbers, and card numbers (Luhn-checked to avoid destroying order IDs). It's

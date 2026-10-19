@@ -17,3 +17,4 @@ Short, dated record of choices made while building v1. Longer rationale is in [D
 | 2026-10-15 | Project name isolated behind `scripts/rename.py` | Name is undecided (`agentifyapi` is taken on PyPI and GitHub). Tested: rename then pytest stays green. | Hand renaming later. |
 | 2026-10-15 | Crawler only calls the describer when the contract hash changed | Removed a redundant second `propose` path. Unchanged crawls cost zero LLM calls. | Re-describe every crawl. |
 | 2026-10-15 | Protobuf/gRPC is a typed config field (`proto:`) that raises `NotImplementedError` | The extension point is visible without shipping half a feature. | Omit it entirely. |
+| 2026-10-18 | Discovery (meta-tools and per-server lists) is filtered by the caller's policy | Default deny should cover what a caller can see, not only what it can call. Names and schemas of tools you can't invoke are noise in context and leak the API surface. | Show every enabled tool and deny at invoke time. |

@@ -112,6 +112,30 @@ async def test_gateway_end_to_end(tmp_path, serve):
             )
             assert res[1][0]
 
+            # discovery only shows what the caller's policy lets it invoke
+            res = await _session_call(
+                f"{gw}/mcp",
+                "weak",
+                [
+                    ("discover_servers", {}),
+                    ("list_tools", {"server": "orders"}),
+                    ("get_tool_schema", {"tool": "orders.create_order"}),
+                    ("get_tool_schema", {"tool": "orders.get_order"}),
+                ],
+            )
+            assert json.loads(res[1][1]) == [{"server": "orders", "owner": "commerce", "tools": 1}]
+            assert [t["tool"] for t in json.loads(res[2][1])] == ["orders.get_order"]
+            assert res[3][0] and "not available" in res[3][1]
+            assert not res[4][0] and json.loads(res[4][1])["tool"] == "orders.get_order"
+            res = await _session_call(
+                f"{gw}/mcp", None, [("discover_servers", {}), ("list_tools", {"server": "orders"})]
+            )
+            assert json.loads(res[1][1]) == [] and json.loads(res[2][1]) == []
+            res = await _session_call(f"{gw}/servers/orders/mcp", "weak", [])
+            assert res[0] == ["get_order"]
+            res = await _session_call(f"{gw}/servers/orders/mcp", None, [])
+            assert res[0] == []
+
             # direct per-server endpoint
             res = await _session_call(
                 f"{gw}/servers/orders/mcp", "good", [("get_order", {"order_id": 102, "_fields": ["status"]})]

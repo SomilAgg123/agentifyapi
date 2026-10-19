@@ -36,7 +36,9 @@ def cmd_crawl(args) -> int:
             for t in r.get(k, []):
                 print(f"  {k:8} {t}")
     if any(r.get("new") or r.get("changed") for r in report.values()):
-        print(f"\nReview with `{PROG} tools diff <tool>` then `{PROG} tools approve <tool>`.")
+        print(
+            f"\nReview with `{PROG} tools diff <tool>`, then `{PROG} tools approve <tool>` and `tools enable <tool>`."
+        )
     return 1 if any("error" in r for r in report.values()) else 0
 
 
@@ -58,8 +60,18 @@ def cmd_tools(args) -> int:
         if not args.target:
             print("tool name required", file=sys.stderr)
             return 2
-        targets = [t["name"] for t in reg.tools(args.target[:-2])] if args.target.endswith(".*") else [args.target]
+        bulk = args.target.endswith(".*")
+        rows = reg.tools(args.target[:-2]) if bulk else []
+        pending = {t["name"]: t["pending"] for t in rows}
+        targets = list(pending) if bulk else [args.target]
+        if bulk and not targets:
+            raise RegistryError(f"no tools match {args.target!r}")
+        done, skipped = 0, 0
         for tool in targets:
+            if args.action in ("approve", "reject") and bulk and not pending[tool]:
+                print(f"{tool}: skipped (no pending revision)")
+                skipped += 1
+                continue
             if args.action == "diff":
                 print(revision_diff(reg, tool) or f"{tool}: no changes")
             elif args.action == "approve":
@@ -75,6 +87,9 @@ def cmd_tools(args) -> int:
             elif args.action == "history":
                 for r in reg.revisions(tool):
                     print(f"v{r['version']} {r['status']:10} {r['spec_hash']} {r['decided_by'] or ''}")
+            done += 1
+        if bulk and skipped and not done:
+            raise RegistryError(f"no pending revisions under {args.target!r}; nothing to {args.action}")
     except RegistryError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1

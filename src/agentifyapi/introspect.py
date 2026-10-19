@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import os
 import sys
 from typing import Any
 
@@ -17,7 +18,9 @@ from typing import Any
 def import_app(target: str, app_dir: str | None = None):
     module_name, _, attr = target.partition(":")
     attr = attr or "app"
-    if app_dir and app_dir not in sys.path:
+    # Like uvicorn: import from the current directory unless the caller names one.
+    app_dir = app_dir or os.getcwd()
+    if app_dir not in sys.path:
         sys.path.insert(0, app_dir)
     module = importlib.import_module(module_name)
     obj = module

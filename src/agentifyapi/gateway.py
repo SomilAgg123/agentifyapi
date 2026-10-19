@@ -7,7 +7,8 @@ One low-level MCP server, served over streamable HTTP, answers on two kinds of p
 * ``/servers/{name}/mcp`` - every enabled tool of one service exposed directly, for
   clients that prefer classic tool lists.
 
-Only approved + enabled tool versions are ever visible. Every invocation goes through
+Only approved + enabled tool versions are ever visible, and discovery only lists the tools the
+caller's policy allows it to invoke. Every invocation goes through
 policy -> HTTP forward -> projection -> PII redaction -> audit.
 """
 
@@ -27,7 +28,7 @@ from starlette.requests import Request
 from starlette.routing import Route
 
 from .config import Settings
-from .governance import AuditLog, is_allowed, project, redact, resolve_caller
+from .governance import AuditLog, Caller, is_allowed, project, redact, resolve_caller
 from .registry import Registry
 
 META_TOOLS = [
@@ -98,37 +99,42 @@ class Gateway:
         self.manager = StreamableHTTPSessionManager(app=self.server, stateless=True, json_response=True)
 
     # ------------------------------------------------------------ discovery
-    def discover_servers(self, query: str = "") -> list[dict]:
+    # `caller` filters results to what the policy lets that caller invoke (MCP requests always pass
+    # one). None means no policy filter, for in-process use by the owner.
+    def _visible(self, tool: str, caller: Caller | None) -> bool:
+        return caller is None or is_allowed(self.settings.policy, caller, tool)
+
+    def _live_tools(self, server: str, caller: Caller | None) -> list[dict]:
+        out = []
+        for t in self.registry.tools(server, enabled_only=True):
+            d = self.registry.live_definition(t["name"])
+            if d and self._visible(d["name"], caller):
+                out.append(d)
+        return out
+
+    def discover_servers(self, query: str = "", caller: Caller | None = None) -> list[dict]:
         out = []
         for s in self.registry.servers():
-            tools = self.registry.tools(s["name"], enabled_only=True)
+            tools = self._live_tools(s["name"], caller)
             if not tools:
                 continue
-            blob = (
-                s["name"]
-                + " "
-                + " ".join(
-                    t["name"] + " " + (self.registry.live_definition(t["name"]) or {}).get("description", "")
-                    for t in tools
-                )
-            )
+            blob = s["name"] + " " + " ".join(d["name"] + " " + d.get("description", "") for d in tools)
             score = _score(blob, query) if query else 1
             if score:
                 out.append({"server": s["name"], "owner": s["owner"], "tools": len(tools), "_score": score})
         out.sort(key=lambda x: -x["_score"])
         return [{k: v for k, v in o.items() if k != "_score"} for o in out]
 
-    def list_tools(self, server: str, query: str = "") -> list[dict]:
-        out = []
-        for t in self.registry.tools(server, enabled_only=True):
-            d = self.registry.live_definition(t["name"])
-            if d and (not query or _score(d["name"] + " " + d.get("description", ""), query)):
-                out.append({"tool": d["name"], "method": d["method"], "description": d.get("description", "")})
-        return out
+    def list_tools(self, server: str, query: str = "", caller: Caller | None = None) -> list[dict]:
+        return [
+            {"tool": d["name"], "method": d["method"], "description": d.get("description", "")}
+            for d in self._live_tools(server, caller)
+            if not query or _score(d["name"] + " " + d.get("description", ""), query)
+        ]
 
-    def get_tool_schema(self, tool: str) -> dict:
+    def get_tool_schema(self, tool: str, caller: Caller | None = None) -> dict:
         d = self.registry.live_definition(tool)
-        if not d:
+        if not d or not self._visible(tool, caller):
             raise ToolError(f"tool {tool!r} is not available (unknown, not approved, or disabled)")
         return {
             "tool": d["name"],
@@ -226,42 +232,42 @@ class Gateway:
 
         @srv.list_tools()
         async def _list_tools() -> list[types.Tool]:
-            path, _ = self._request_info()
+            path, key = self._request_info()
             server = self._server_from_path(path)
             if server is None:
                 return META_TOOLS
+            caller = resolve_caller(self.settings.policy, key)
             out = []
-            for t in self.registry.tools(server, enabled_only=True):
-                d = self.registry.live_definition(t["name"])
-                if d:
-                    schema = json.loads(json.dumps(d["input_schema"]))
-                    schema.setdefault("properties", {})["_fields"] = {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "Optional response projection (dotted paths).",
-                    }
-                    out.append(
-                        types.Tool(
-                            name=d["name"].split(".", 1)[1], description=d.get("description", ""), inputSchema=schema
-                        )
+            for d in self._live_tools(server, caller):
+                schema = json.loads(json.dumps(d["input_schema"]))
+                schema.setdefault("properties", {})["_fields"] = {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional response projection (dotted paths).",
+                }
+                out.append(
+                    types.Tool(
+                        name=d["name"].split(".", 1)[1], description=d.get("description", ""), inputSchema=schema
                     )
+                )
             return out
 
         @srv.call_tool()
         async def _call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             path, key = self._request_info()
             server = self._server_from_path(path)
+            caller = resolve_caller(self.settings.policy, key)
             try:
                 if server is not None:
                     args = dict(arguments or {})
                     fields = args.pop("_fields", None)
                     result = await self.invoke(f"{server}.{name}", args, fields, key)
                 elif name == "discover_servers":
-                    result = self.discover_servers(arguments.get("query", ""))
+                    result = self.discover_servers(arguments.get("query", ""), caller)
                 elif name == "list_tools":
-                    result = self.list_tools(arguments["server"], arguments.get("query", ""))
+                    result = self.list_tools(arguments["server"], arguments.get("query", ""), caller)
                 elif name == "get_tool_schema":
-                    result = self.get_tool_schema(arguments["tool"])
+                    result = self.get_tool_schema(arguments["tool"], caller)
                 elif name == "invoke_tool":
                     result = await self.invoke(arguments["tool"], arguments.get("args"), arguments.get("fields"), key)
                 else:

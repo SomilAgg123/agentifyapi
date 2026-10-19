@@ -3,7 +3,7 @@
 [![CI](https://github.com/SomilAgg123/agentifyapi/actions/workflows/ci.yml/badge.svg)](https://github.com/SomilAgg123/agentifyapi/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/agentifyapi?label=PyPI)](https://pypi.org/project/agentifyapi/)
 [![Python versions](https://img.shields.io/pypi/pyversions/agentifyapi?label=python)](https://pypi.org/project/agentifyapi/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/SomilAgg123/agentifyapi/blob/main/LICENSE)
 
 **Make your FastAPI services agent-ready with owner-approved MCP tools.**
 
@@ -49,8 +49,8 @@ uvicorn examples.quickstart:app --port 8200
 # another terminal:
 agentifyapi --db quickstart.db tools list
 # inventory.get_stock   -   disabled   1
-agentifyapi --db quickstart.db tools approve inventory.get_stock --by you
-agentifyapi --db quickstart.db tools enable inventory.get_stock
+agentifyapi --db quickstart.db tools approve inventory.get_stock --by you   # approved, still disabled
+agentifyapi --db quickstart.db tools enable inventory.get_stock            # now agents can call it
 ```
 
 An MCP client pointed at `http://127.0.0.1:8200/mcp` then discovers and calls the tool:
@@ -61,8 +61,8 @@ An MCP client pointed at `http://127.0.0.1:8200/mcp` then discovers and calls th
 {"sku": "KB-1", "on_hand": 42, "warehouse": "nyc"}
 ```
 
-Run the whole flow yourself with `python scripts/verify_quickstart.py` (CI runs this on every push).
-For many services behind one gateway, see [Standalone gateway demo](#standalone-gateway-demo).
+From a clone of this repo, `uv run python scripts/verify_quickstart.py` runs the whole flow (CI runs it on every push).
+For many services behind one gateway, see [Standalone gateway](#standalone-gateway).
 
 ## How this differs from fastapi_mcp and FastMCP
 
@@ -94,7 +94,7 @@ such as broader MCP feature coverage and richer authentication. agentifyapi is y
 | Your APIs were built before MCP | Converts FastAPI routes (Pydantic models, docstrings, tags, dependencies) into MCP tools. Falls back to any `/openapi.json`. |
 | Auto-generated tools are risky | Every tool starts **disabled**. An owner reviews a diff, approves, and enables it. Spec changes become pending revisions, so the live version never changes silently. Rollback is one command. |
 | Thousands of tools flood the context window | Agents use 4 meta-tools (`discover_servers`, `list_tools`, `get_tool_schema`, `invoke_tool`) and ask for only the response `fields` they need. |
-| Agents shouldn't see everything | Per-caller and per-role policy via API keys. Regex PII redaction (emails, phones, SSNs, Luhn-valid cards). JSON-lines audit log. |
+| Agents shouldn't see everything | Per-caller and per-role policy via API keys. Discovery only lists the tools a caller is allowed to invoke. Regex PII redaction (emails, phones, SSNs, Luhn-valid cards). JSON-lines audit log. |
 
 ## Architecture
 
@@ -117,12 +117,43 @@ Two deployment shapes share the same core.
 * **Embedded.** `mount(app)` serves one service with in-process dispatch and no extra deployment.
 * **Standalone gateway.** `agentifyapi serve` puts many services behind one MCP endpoint and re-crawls them on an interval.
 
-## Standalone gateway demo
+## Standalone gateway
+
+### With pip only
+
+Put the gateway in front of a FastAPI service that is already running (here on port 8300). Write a
+small `config.yaml` with the registry path and who may call what:
+
+```yaml
+# config.yaml
+database: registry.db
+policy:
+  api_keys:
+    my-agent-key: { name: my-agent, roles: [agent] }
+  rules:
+    - tools: ["inventory.*"]
+      roles: [agent]
+```
+
+```bash
+pip install agentifyapi
+agentifyapi -c config.yaml crawl --url http://127.0.0.1:8300 --name inventory   # reads /openapi.json
+agentifyapi -c config.yaml tools list
+agentifyapi -c config.yaml tools approve "inventory.*" --by you   # approved, still disabled
+agentifyapi -c config.yaml tools enable inventory.get_stock       # now agents can call it
+agentifyapi -c config.yaml serve --port 8000
+```
+
+Agents connect to `http://127.0.0.1:8000/mcp` with the header `x-api-key: my-agent-key`. To crawl
+by importing the app instead, use `crawl --app myservice.main:app --base-url http://127.0.0.1:8300`
+from the service's directory (or pass `--app-dir`).
+
+### Demo from a clone
 
 ```bash
 git clone https://github.com/SomilAgg123/agentifyapi && cd agentifyapi
 uv sync                          # or: pip install -e ".[dev]"
-make demo                        # = python scripts/run_demo.py  (no Docker needed)
+uv run python scripts/run_demo.py   # no Docker needed; `make demo` does the same
 ```
 
 The demo starts two mock FastAPI services (`orders`, `users`) and crawls them. Orders is crawled
@@ -135,10 +166,10 @@ gateway on `:8000`, and runs `examples/agent_client.py`, an MCP SDK client that 
   "card_number": "[REDACTED:card]", "shipping_note": "Call [REDACTED:phone] on arrival" }
 ```
 
-`python scripts/run_demo.py --keep` leaves it running so you can open the admin UI at
+`uv run python scripts/run_demo.py --keep` leaves it running so you can open the admin UI at
 <http://127.0.0.1:8000/admin/>. With Docker, run `make demo-docker` (admin UI login `admin` / `demo`).
 
-`make verify` boots the same demo and checks 8 behaviors against it over real MCP HTTP: discovery,
+`uv run python scripts/verify_demo.py` (or `make verify`) boots the same demo and checks 8 behaviors against it over real MCP HTTP: discovery,
 approval gating, projection, redaction, policy denial, the per-server endpoint, the admin UI, and the audit log.
 
 ### Connect a coding agent
@@ -158,7 +189,7 @@ crawl ──► v1 pending ──approve──► v1 live (disabled) ──enabl
 * Changes are detected with a hash of the tool **contract** (method, path, schemas, docs). The
   generated description is excluded, so LLM wording never creates noise revisions.
 * `agentifyapi tools list | diff | approve | reject | enable | disable | rollback | history <tool>`.
-  `server.*` works for bulk actions. `--by` records the reviewer.
+  `server.*` works for bulk actions; bulk approve and reject skip tools with nothing pending. `--by` records the reviewer.
 * The admin UI (`/admin` standalone, `/mcp-admin` embedded) shows the same diff with buttons.
 * To exclude a route entirely, use `@app.post(..., openapi_extra={"x-agentifyapi-exclude": True})`.
 
@@ -195,7 +226,7 @@ policy:
   allow_anonymous: false       # dev only: callers without a key may use any enabled tool
   api_keys:
     <key>: { name: support-agent, roles: [support] }
-  rules:                       # allow-list, default deny
+  rules:                       # allow-list, default deny; discovery hides tools a caller can't invoke
     - tools: ["orders.*"]      # fnmatch on tool names
       roles: [support]
       callers: [some-agent]
@@ -214,7 +245,7 @@ admin:                         # admin UI (/admin, /mcp-admin) access
 
 `mount(app, name=, owner=, database=, policy=, prefix=, admin_path=, auto_approve=False, redact_pii=True, audit_log=, admin_password=None, admin_username="admin", admin_allow_remote=False)`.
 `auto_approve=True` is for local development only. Without an admin password the admin UI only
-answers localhost; see [SECURITY.md](SECURITY.md).
+answers localhost; see [SECURITY.md](https://github.com/SomilAgg123/agentifyapi/blob/main/SECURITY.md).
 
 ## Development
 
@@ -225,7 +256,7 @@ uv run python scripts/verify_quickstart.py   # README example
 uv run python scripts/verify_demo.py         # multi-service gateway
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md) for coding agents, and [SECURITY.md](SECURITY.md) to report vulnerabilities.
+See [CONTRIBUTING.md](https://github.com/SomilAgg123/agentifyapi/blob/main/CONTRIBUTING.md), [AGENTS.md](https://github.com/SomilAgg123/agentifyapi/blob/main/AGENTS.md) for coding agents, and [SECURITY.md](https://github.com/SomilAgg123/agentifyapi/blob/main/SECURITY.md) to report vulnerabilities.
 
 The tests cover schema translation, FastAPI introspection, the crawler and approval flow (with a
 fake spec), the CLI, the admin UI, projection, redaction, and policy. Two end-to-end runs go over
@@ -248,4 +279,4 @@ existing API definitions, registering virtual MCP servers disabled by default, o
 incremental discovery, response projection, and PII stripping. Built on the official
 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) and FastAPI.
 
-MIT licensed. See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/DESIGN.md](docs/DESIGN.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
+MIT licensed. See [CONTRIBUTING.md](https://github.com/SomilAgg123/agentifyapi/blob/main/CONTRIBUTING.md), [docs/DESIGN.md](https://github.com/SomilAgg123/agentifyapi/blob/main/docs/DESIGN.md) and [docs/DECISIONS.md](https://github.com/SomilAgg123/agentifyapi/blob/main/docs/DECISIONS.md).
