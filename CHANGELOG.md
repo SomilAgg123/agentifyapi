@@ -25,6 +25,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - README: a pip-only standalone gateway example, `uv run` commands before `make`, a note that approve
   leaves a tool disabled until you enable it, and absolute links that work on PyPI.
 
+### Removed
+
+- README: the Docker demo instructions (`make demo-docker` and its admin login). The Dockerfile and
+  compose file stay in the repo for now.
+
 ## [0.2.0] - 2026-10-16
 
 ### Changed

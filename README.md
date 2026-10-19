@@ -153,7 +153,7 @@ from the service's directory (or pass `--app-dir`).
 ```bash
 git clone https://github.com/SomilAgg123/agentifyapi && cd agentifyapi
 uv sync                          # or: pip install -e ".[dev]"
-uv run python scripts/run_demo.py   # no Docker needed; `make demo` does the same
+uv run python scripts/run_demo.py   # `make demo` does the same
 ```
 
 The demo starts two mock FastAPI services (`orders`, `users`) and crawls them. Orders is crawled
@@ -167,7 +167,7 @@ gateway on `:8000`, and runs `examples/agent_client.py`, an MCP SDK client that 
 ```
 
 `uv run python scripts/run_demo.py --keep` leaves it running so you can open the admin UI at
-<http://127.0.0.1:8000/admin/>. With Docker, run `make demo-docker` (admin UI login `admin` / `demo`).
+<http://127.0.0.1:8000/admin/>.
 
 `uv run python scripts/verify_demo.py` (or `make verify`) boots the same demo and checks 8 behaviors against it over real MCP HTTP: discovery,
 approval gating, projection, redaction, policy denial, the per-server endpoint, the admin UI, and the audit log.
