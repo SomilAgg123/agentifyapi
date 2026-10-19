@@ -6,6 +6,30 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-18
+
+### Changed
+
+- Discovery now follows the caller's policy. `discover_servers`, `list_tools`, `get_tool_schema`
+  and the per-server `/servers/{name}/mcp` tool list only show tools the caller is allowed to
+  invoke, so an anonymous or under-privileged caller no longer sees tool names and schemas it can't use.
+- `agentifyapi tools reject` now exits with an error for an unknown tool or one with no pending
+  revision, like `rollback` (the admin UI returns 400 in the same cases).
+
+### Fixed
+
+- `agentifyapi tools approve "server.*"` no longer stops at the first tool with nothing pending.
+  Bulk approve and reject skip those tools (reported as skipped) and fail only if nothing was changed.
+- `agentifyapi crawl --app module:app` imports from the current directory by default, like uvicorn,
+  so `--app-dir .` is no longer needed.
+- README: a pip-only standalone gateway example, `uv run` commands before `make`, a note that approve
+  leaves a tool disabled until you enable it, and absolute links that work on PyPI.
+
+### Removed
+
+- README: the Docker demo instructions (`make demo-docker` and its admin login). The Dockerfile and
+  compose file stay in the repo for now.
+
 ## [0.2.0] - 2026-10-16
 
 ### Changed

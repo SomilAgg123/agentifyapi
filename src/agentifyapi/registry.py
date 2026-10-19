@@ -125,12 +125,18 @@ class Registry:
         self.db.commit()
         return rev["version"]
 
-    def reject(self, tool: str, by: str = "cli") -> None:
-        self.db.execute(
+    def reject(self, tool: str, by: str = "cli") -> int:
+        """Reject every pending revision of `tool`. Returns how many were rejected."""
+        self._tool_row(tool)
+        cur = self.db.execute(
             "UPDATE revisions SET status='rejected', decided_by=?, decided_at=? WHERE tool=? AND status='pending'",
             (by, time.time(), tool),
         )
+        if not cur.rowcount:
+            self.db.rollback()
+            raise RegistryError(f"no pending revision for {tool!r}")
         self.db.commit()
+        return cur.rowcount
 
     def set_enabled(self, tool: str, enabled: bool) -> None:
         row = self._tool_row(tool)
